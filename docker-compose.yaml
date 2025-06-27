@@ -1,0 +1,16 @@
+version: "3"
+services:
+  consul:
+    image: "hashicorp/consul"
+    ports:
+      - "8500:8500"
+  mysql:
+    # 实际使用时最好锁定版本号, latest不是一个最佳实践，mysql:latest
+    image: "mysql:8.0.26"
+    ports:
+      - 3306:3306
+    environment:
+      # mysql镜像要求必须设置密码，username: root; password: mysql
+      - MYSQL_ROOT_PASSWORD=mysql
+      # 容器启动时初始化一个数据库demo_proto
+      - MYSQL_DATABASE=demo_proto
