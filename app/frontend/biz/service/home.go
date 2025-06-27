@@ -23,9 +23,9 @@ func (h *HomeService) Run(req *home.Empty) (map[string]any, error) {
 	//}()
 	resp := make(map[string]any)
 	items := []map[string]any{
-		{"Name": "T-shirt1", "Price": 100, "Picture": "/static/img/t-shirt.jpg"},
-		{"Name": "T-shirt2", "Price": 200, "Picture": "/static/img/t-shirt.jpg"},
-		{"Name": "T-shirt3", "Price": 300, "Picture": "/static/img/t-shirt.jpg"},
+		{"Name": "T-shirt1", "Price": 100, "Picture": "/static/image/t-shirt.jpeg"},
+		{"Name": "T-shirt2", "Price": 200, "Picture": "/static/image/t-shirt.jpeg"},
+		{"Name": "T-shirt3", "Price": 300, "Picture": "/static/image/t-shirt.jpeg"},
 	}
 	resp["Title"] = "Hot Sales"
 	resp["Items"] = items
