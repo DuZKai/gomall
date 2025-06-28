@@ -13,3 +13,9 @@ demo-link-fix:
 .PHONY: gen-frontend
 gen-frontend:
 	@cd app/frontend && cwgo server -I ../../idl --type HTTP --service frontend --module gomall/app/frontend --idl ../../idl/frontend/home.proto
+
+.PHONY: gen-user
+gen-user:
+	@cd app/user && cwgo server --type RPC --service user --module gomall/app/user --pass "-use gomall/rpc_gen/kitex_gen" -I ../../idl --idl ../../idl/user.proto
+	@cd rpc_gen && cwgo client -I ../idl --type RPC --service user --module gomall/rpc_gen --idl ../idl/user.proto
+
