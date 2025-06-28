@@ -165,7 +165,7 @@ go run .
 
 ### 前端代码生成命令
 ```bash
-cwgo server --type HTTP --idl ../../idl/frontend/home.proto --service frontend -module gomall/app/frontend -I ../../idl
+cwgo server --type HTTP --service frontend -module gomall/app/frontend -I ../../idl --idl ../../idl/frontend/home.proto 
 ```
 
 ### 热加载Air工具安装
