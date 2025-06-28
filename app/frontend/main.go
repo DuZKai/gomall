@@ -21,6 +21,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gomall/app/frontend/biz/router"
 	"gomall/app/frontend/conf"
+	"gomall/app/frontend/infra/rpc"
+	"gomall/app/frontend/middleware"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"time"
@@ -30,6 +32,7 @@ func main() {
 	_ = godotenv.Load()
 	// init dal
 	// dal.Init()
+	rpc.InitClient()
 	address := conf.GetConf().Hertz.Address
 	h := server.New(server.WithHostPorts(address))
 
@@ -51,15 +54,30 @@ func main() {
 		PathRewrite:        nil,
 	})
 
+	h.GET("/about", func(c context.Context, ctx *app.RequestContext) {
+		ctx.HTML(consts.StatusOK, "about", utils.H{"title": "About"})
+	})
+
 	h.GET("/sign-in", func(c context.Context, ctx *app.RequestContext) {
-		ctx.HTML(consts.StatusOK, "sign-in", utils.H{"Title": "Sign in"})
+		data := utils.H{
+			"title": "Sign In",
+			"next":  ctx.Query("next"),
+		}
+		ctx.HTML(consts.StatusOK, "sign-in", data)
+	})
+
+	h.GET("/sign-up", func(c context.Context, ctx *app.RequestContext) {
+		ctx.HTML(consts.StatusOK, "sign-up", utils.H{"title": "Sign Up"})
 	})
 
 	h.Spin()
 }
 
 func registerMiddleware(h *server.Hertz) {
-	store, _ := redis.NewStore(10, "tcp", conf.GetConf().Redis.Address, "", []byte(os.Getenv("SESSION_SECRET")))
+	store, err := redis.NewStore(10, "tcp", conf.GetConf().Redis.Address, "", []byte(os.Getenv("SESSION_SECRET")))
+	if err != nil {
+		panic(err)
+	}
 	h.Use(sessions.New("gomall-session", store))
 
 	// log
@@ -100,4 +118,6 @@ func registerMiddleware(h *server.Hertz) {
 
 	// cores
 	h.Use(cors.Default())
+
+	middleware.Register(h)
 }
