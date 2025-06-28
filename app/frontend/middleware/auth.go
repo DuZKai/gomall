@@ -17,10 +17,10 @@ package middleware
 import (
 	"context"
 
-	frontendUtils "github.com/cloudwego/biz-demo/gomall/app/frontend/utils"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/hertz-contrib/sessions"
+	frontendUtils "gomall/app/frontend/utils"
 )
 
 func GlobalAuth() app.HandlerFunc {

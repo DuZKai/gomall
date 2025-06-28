@@ -5,4 +5,5 @@ toolchain go1.24.4
 use (
 	./app/frontend
 	app/user
+	rpc_gen
 )

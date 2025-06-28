@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	consul "github.com/kitex-contrib/registry-consul"
 	"gomall/app/user/biz/dal"
 	"net"
 	"time"
@@ -28,7 +29,7 @@ func main() {
 
 	svr := userservice.NewServer(new(UserServiceImpl), opts...)
 
-	err := svr.Run()
+	err = svr.Run()
 	if err != nil {
 		klog.Error(err.Error())
 	}

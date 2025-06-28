@@ -74,7 +74,8 @@ func main() {
 }
 
 func registerMiddleware(h *server.Hertz) {
-	store, err := redis.NewStore(10, "tcp", conf.GetConf().Redis.Address, "", []byte(os.Getenv("SESSION_SECRET")))
+	store, err := redis.NewStore(10, "tcp", conf.GetConf().Redis.Address, conf.GetConf().Redis.Password, []byte(os.Getenv("SESSION_SECRET")))
+	
 	if err != nil {
 		panic(err)
 	}

@@ -6,10 +6,11 @@ services:
       - 3306:3306
     environment:
       - MYSQL_DATABASE=gorm
-      - MYSQL_USER=gorm
-      - MYSQL_PASSWORD=gorm
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=mysql
       - MYSQL_RANDOM_ROOT_PASSWORD="yes"
   redis:
     image: 'redis:latest'
+    command: redis-server --requirepass redis
     ports:
       - 6379:6379

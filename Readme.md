@@ -199,6 +199,10 @@ docker-compose exec mysql bash
 create database test;
 ```
 
+linux测试go test
+```bash
+go test -v user_test.go
+```
 
 引用项目需要的依赖增加到go.mod文件, 去掉go.mod文件中项目不需要的依赖:
 ```
