@@ -1,0 +1,6 @@
+protected-mode no
+port 6379
+daemonize no
+#appendonly yes
+requirepass redis
+

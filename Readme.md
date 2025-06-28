@@ -177,6 +177,16 @@ air -c .air.toml
 air
 ```
 
+### 安装session
+```bash
+go get github.com/hertz-contrib/sessions
+```
+
+### 安装redis
+```bash
+docker-compose up -d --build
+```
+
 启动docker
 ```bash
 systemctl start docker
