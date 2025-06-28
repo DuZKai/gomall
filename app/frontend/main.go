@@ -40,7 +40,16 @@ func main() {
 	// 加载模板文件
 	h.LoadHTMLGlob("template/*")
 
-	h.Static("/static", "./")
+	//h.Static("/static", "./")
+	h.StaticFS("/static", &app.FS{
+		Root:               "./",
+		GenerateIndexPages: true,
+		PathRewrite:        nil,
+	})
+
+	h.GET("/sign-in", func(c context.Context, ctx *app.RequestContext) {
+		ctx.HTML(consts.StatusOK, "sign-in", utils.H{"Title": "Sign in"})
+	})
 
 	h.Spin()
 }
