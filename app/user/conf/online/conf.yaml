@@ -1,5 +1,5 @@
 kitex:
-  service: "user"
+  service: "product"
   address: ":8881"
   log_level: info
   log_file_name: "log/kitex.log"

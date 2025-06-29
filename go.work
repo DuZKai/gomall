@@ -6,4 +6,5 @@ use (
 	./app/frontend
 	app/user
 	rpc_gen
+	app/product
 )

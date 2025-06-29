@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package product;
+
+option go_package ="/product";
+
+service ProductCatalogService {
+  // 列出产品
+  rpc ListProducts(ListProductsReq) returns (ListProductsResp) {} ;
+  // 根据产品 ID 获取单个产品
+  rpc GetProduct(GetProductReq) returns (GetProductResp) {};
+  // 根据查询字符串进行产品搜索
+  rpc SearchProducts (SearchProductsReq) returns (SearchProductsResp) {} ;
+}
+
+message ListProductsReq {
+  int32 page = 1;
+  int32 page_size = 2;
+  string category_name = 3;
+}
+
+message Product {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  string picture = 4;
+  float price = 5;
+  // repeated 关键字表示该字段可以包含多个 Product 消息
+  repeated string categories = 6;
+}
+
+message ListProductsResp {
+  repeated Product products = 1;
+}
+
+message GetProductReq {
+  uint32 id = 1;
+}
+
+message GetProductResp {
+  Product product = 1;
+}
+
+message SearchProductsReq {
+  string query = 1;
+}
+
+message SearchProductsResp {
+  repeated Product results = 1;
+}
