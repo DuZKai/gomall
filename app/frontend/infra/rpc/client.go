@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"gomall/rpc_gen/kitex_gen/product/productcatalogservice"
 	"sync"
 
 	"github.com/cloudwego/kitex/client"
@@ -25,14 +26,15 @@ import (
 )
 
 var (
-	UserClient userservice.Client
-
-	once sync.Once
+	UserClient    userservice.Client
+	ProductClient productcatalogservice.Client
+	once          sync.Once
 )
 
 func InitClient() {
 	once.Do(func() {
 		initUserClient()
+		initProductClient()
 	})
 }
 
@@ -40,5 +42,14 @@ func initUserClient() {
 	r, err := consul.NewConsulResolver(conf.GetConf().Hertz.RegistryAddr)
 	frontendUtils.MustHandleError(err)
 	UserClient, err = userservice.NewClient("user", client.WithResolver(r))
+	frontendUtils.MustHandleError(err)
+}
+
+func initProductClient() {
+	var opts []client.Option
+	r, err := consul.NewConsulResolver(conf.GetConf().Hertz.RegistryAddr)
+	frontendUtils.MustHandleError(err)
+	opts = append(opts, client.WithResolver(r))
+	ProductClient, err = productcatalogservice.NewClient("product", opts...)
 	frontendUtils.MustHandleError(err)
 }

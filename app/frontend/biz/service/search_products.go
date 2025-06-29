@@ -4,30 +4,30 @@ import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/common/utils"
 	"gomall/app/frontend/infra/rpc"
-	product "gomall/rpc_gen/kitex_gen/product"
 	rpcproduct "gomall/rpc_gen/kitex_gen/product"
+
+	"github.com/cloudwego/hertz/pkg/app"
+	product "gomall/app/frontend/hertz_gen/frontend/product"
 )
 
 type SearchProductsService struct {
-	Context context.Context
+	RequestContext *app.RequestContext
+	Context        context.Context
 }
 
-func NewSearchProductsService(Context context.Context) *SearchProductsService {
-	return &SearchProductsService{Context: Context}
+func NewSearchProductsService(Context context.Context, RequestContext *app.RequestContext) *SearchProductsService {
+	return &SearchProductsService{RequestContext: RequestContext, Context: Context}
 }
 
-// Run create note info
 func (h *SearchProductsService) Run(req *product.SearchProductsReq) (resp map[string]any, err error) {
 	products, err := rpc.ProductClient.SearchProducts(h.Context, &rpcproduct.SearchProductsReq{
-		Query: req.Query,
+		Query: req.Q,
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	resp = utils.H{
+	return utils.H{
 		"items": products.Results,
-		"q":     req.Query,
-	}
-	return
+		"q":     req.Q,
+	}, nil
 }

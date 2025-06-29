@@ -177,6 +177,11 @@ air -c .air.toml
 air
 ```
 
+### 安装gin
+```bash
+go get -u github.com/gin-gonic/gin
+```
+
 ### 安装session
 ```bash
 go get github.com/hertz-contrib/sessions

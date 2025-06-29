@@ -19,7 +19,7 @@ func (s *ListProductsService) Run(req *product.ListProductsReq) (resp *product.L
 	// Finish your business logic.
 	categoryQuery := model.NewCategoryQuery(s.ctx, mysql.DB)
 
-	c, err := categoryQuery.GetProductsByCategoryName(req.CategoryName)
+	c, err := categoryQuery.GetProductsByCategoryNameAndPage(req.CategoryName, req.Page, req.PageSize)
 	resp = &product.ListProductsResp{}
 	for _, v1 := range c {
 		for _, v := range v1.Products {

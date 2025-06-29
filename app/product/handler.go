@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	product "gomall/rpc_gen/kitex_gen/product"
+	"errors"
 	"gomall/app/product/biz/service"
+	product "gomall/rpc_gen/kitex_gen/product"
 )
 
 // ProductCatalogServiceImpl implements the last service interface defined in the IDL.
@@ -25,7 +26,18 @@ func (s *ProductCatalogServiceImpl) GetProduct(ctx context.Context, req *product
 
 // SearchProducts implements the ProductCatalogServiceImpl interface.
 func (s *ProductCatalogServiceImpl) SearchProducts(ctx context.Context, req *product.SearchProductsReq) (resp *product.SearchProductsResp, err error) {
-	resp, err = service.NewSearchProductsService(ctx).Run(req)
+	rawResp, err := service.NewSearchProductsService(ctx).Run(req)
+	if err != nil {
+		return nil, err
+	}
 
-	return resp, err
+	products, ok := rawResp["items"].([]*product.Product)
+	if !ok {
+		return nil, errors.New("invalid type for items")
+	}
+
+	resp = &product.SearchProductsResp{
+		Results: products,
+	}
+	return resp, nil
 }

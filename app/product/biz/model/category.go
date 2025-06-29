@@ -35,3 +35,16 @@ func NewCategoryQuery(ctx context.Context, db *gorm.DB) *CategoryQuery {
 		db:  db,
 	}
 }
+
+func (c CategoryQuery) GetProductsByCategoryNameAndPage(name string, page, pageSize int32) (categories []Category, err error) {
+	offset := (page - 1) * pageSize
+	err = c.db.WithContext(c.ctx).
+		Model(&Category{}).
+		Where(&Category{Name: name}).
+		// 加载带分页的 Products
+		Preload("Products", func(db *gorm.DB) *gorm.DB {
+			return db.Offset(int(offset)).Limit(int(pageSize))
+		}).
+		Find(&categories).Error
+	return
+}
