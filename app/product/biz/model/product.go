@@ -43,3 +43,12 @@ func NewProductQuery(ctx context.Context, db *gorm.DB) *ProductQuery {
 		db:  db,
 	}
 }
+
+// 根据id修改product
+func (p ProductQuery) UpdateProduct(productId int, product *Product) (err error) {
+	err = p.db.WithContext(p.ctx).Model(&Product{}).Where("id = ?", productId).Updates(product).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

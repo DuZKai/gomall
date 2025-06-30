@@ -11,6 +11,8 @@ service ProductCatalogService {
   rpc GetProduct(GetProductReq) returns (GetProductResp) {};
   // 根据查询字符串进行产品搜索
   rpc SearchProducts (SearchProductsReq) returns (SearchProductsResp) {} ;
+  // 更新产品信息
+  rpc UpdateProduct (UpdateProductReq) returns (UpdateProductResp) {} ;
 }
 
 message ListProductsReq {
@@ -47,4 +49,16 @@ message SearchProductsReq {
 
 message SearchProductsResp {
   repeated Product results = 1;
+}
+
+message UpdateProductReq{
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  string picture = 4;
+  float price = 5;
+}
+
+message UpdateProductResp{
+  Product product = 1;
 }

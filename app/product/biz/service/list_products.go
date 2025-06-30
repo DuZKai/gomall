@@ -36,7 +36,7 @@ func (s *ListProductsService) Run(req *product.ListProductsReq) (resp *product.L
 		// 如果反序列化失败，也继续查数据库
 	}
 
-	// ② 未命中缓存或反序列化失败，查询数据库
+	// 未命中缓存或反序列化失败，查询数据库
 	categories, err := categoryQuery.GetProductsByCategoryNameAndPage(req.CategoryName, req.Page, req.PageSize)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (s *ListProductsService) Run(req *product.ListProductsReq) (resp *product.L
 		}
 	}
 
-	// ③ 写入 Redis 缓存（设置过期时间）
+	// 写入 Redis 缓存（设置过期时间）
 	data, _ := json.Marshal(resp)
 	_ = redis.RedisClient.Set(s.ctx, cacheKey, data, time.Minute*10).Err()
 

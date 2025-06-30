@@ -41,3 +41,9 @@ func (s *ProductCatalogServiceImpl) SearchProducts(ctx context.Context, req *pro
 	}
 	return resp, nil
 }
+
+// UpdateProduct implements the ProductCatalogServiceImpl interface.
+func (s *ProductCatalogServiceImpl) UpdateProduct(ctx context.Context, req *product.UpdateProductReq) (resp *product.UpdateProductResp, err error) {
+	resp, err = service.NewUpdateProductService(ctx).Run(req)
+	return resp, err
+}

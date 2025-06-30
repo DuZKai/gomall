@@ -84,6 +84,23 @@ func setupGinRouter() *gin.Engine {
 		c.JSON(http.StatusOK, resp)
 	})
 
+	r.POST("/products", func(c *gin.Context) {
+		var req product.UpdateProductReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// 创建服务并执行
+		svc := service.NewUpdateProductService(c.Request.Context()) // 使用请求上下文
+		resp, err := svc.Run(&req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, resp)
+	})
+
 	return r
 }
 
