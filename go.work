@@ -7,4 +7,5 @@ use (
 	app/user
 	rpc_gen
 	app/product
+	app/auth
 )
