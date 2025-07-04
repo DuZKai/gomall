@@ -12,6 +12,19 @@ var (
 	_ = fastpb.Skip
 )
 
+func (x *Empty) FastRead(buf []byte, _type int8, number int32) (offset int, err error) {
+	switch number {
+	default:
+		offset, err = fastpb.Skip(buf, _type, number)
+		if err != nil {
+			goto SkipFieldError
+		}
+	}
+	return offset, nil
+SkipFieldError:
+	return offset, fmt.Errorf("%T cannot parse invalid wire-format data, error: %s", x, err)
+}
+
 func (x *ListProductsReq) FastRead(buf []byte, _type int8, number int32) (offset int, err error) {
 	switch number {
 	case 1:
@@ -372,6 +385,47 @@ func (x *UpdateProductResp) fastReadField1(buf []byte, _type int8) (offset int, 
 	return offset, nil
 }
 
+func (x *ListProductIdsResp) FastRead(buf []byte, _type int8, number int32) (offset int, err error) {
+	switch number {
+	case 1:
+		offset, err = x.fastReadField1(buf, _type)
+		if err != nil {
+			goto ReadFieldError
+		}
+	default:
+		offset, err = fastpb.Skip(buf, _type, number)
+		if err != nil {
+			goto SkipFieldError
+		}
+	}
+	return offset, nil
+SkipFieldError:
+	return offset, fmt.Errorf("%T cannot parse invalid wire-format data, error: %s", x, err)
+ReadFieldError:
+	return offset, fmt.Errorf("%T read field %d '%s' error: %s", x, number, fieldIDToName_ListProductIdsResp[number], err)
+}
+
+func (x *ListProductIdsResp) fastReadField1(buf []byte, _type int8) (offset int, err error) {
+	offset, err = fastpb.ReadList(buf, _type,
+		func(buf []byte, _type int8) (n int, err error) {
+			var v uint32
+			v, offset, err = fastpb.ReadUint32(buf, _type)
+			if err != nil {
+				return offset, err
+			}
+			x.Id = append(x.Id, v)
+			return offset, err
+		})
+	return offset, err
+}
+
+func (x *Empty) FastWrite(buf []byte) (offset int) {
+	if x == nil {
+		return offset
+	}
+	return offset
+}
+
 func (x *ListProductsReq) FastWrite(buf []byte) (offset int) {
 	if x == nil {
 		return offset
@@ -619,6 +673,34 @@ func (x *UpdateProductResp) fastWriteField1(buf []byte) (offset int) {
 	}
 	offset += fastpb.WriteMessage(buf[offset:], 1, x.GetProduct())
 	return offset
+}
+
+func (x *ListProductIdsResp) FastWrite(buf []byte) (offset int) {
+	if x == nil {
+		return offset
+	}
+	offset += x.fastWriteField1(buf[offset:])
+	return offset
+}
+
+func (x *ListProductIdsResp) fastWriteField1(buf []byte) (offset int) {
+	if len(x.Id) == 0 {
+		return offset
+	}
+	offset += fastpb.WriteListPacked(buf[offset:], 1, len(x.GetId()),
+		func(buf []byte, numTagOrKey, numIdxOrVal int32) int {
+			offset := 0
+			offset += fastpb.WriteUint32(buf[offset:], numTagOrKey, x.GetId()[numIdxOrVal])
+			return offset
+		})
+	return offset
+}
+
+func (x *Empty) Size() (n int) {
+	if x == nil {
+		return n
+	}
+	return n
 }
 
 func (x *ListProductsReq) Size() (n int) {
@@ -870,6 +952,29 @@ func (x *UpdateProductResp) sizeField1() (n int) {
 	return n
 }
 
+func (x *ListProductIdsResp) Size() (n int) {
+	if x == nil {
+		return n
+	}
+	n += x.sizeField1()
+	return n
+}
+
+func (x *ListProductIdsResp) sizeField1() (n int) {
+	if len(x.Id) == 0 {
+		return n
+	}
+	n += fastpb.SizeListPacked(1, len(x.GetId()),
+		func(numTagOrKey, numIdxOrVal int32) int {
+			n := 0
+			n += fastpb.SizeUint32(numTagOrKey, x.GetId()[numIdxOrVal])
+			return n
+		})
+	return n
+}
+
+var fieldIDToName_Empty = map[int32]string{}
+
 var fieldIDToName_ListProductsReq = map[int32]string{
 	1: "Page",
 	2: "PageSize",
@@ -915,4 +1020,8 @@ var fieldIDToName_UpdateProductReq = map[int32]string{
 
 var fieldIDToName_UpdateProductResp = map[int32]string{
 	1: "Product",
+}
+
+var fieldIDToName_ListProductIdsResp = map[int32]string{
+	1: "Id",
 }

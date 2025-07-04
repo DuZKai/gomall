@@ -42,3 +42,12 @@ func UpdateProduct(ctx context.Context, req *product.UpdateProductReq, callOptio
 	}
 	return resp, nil
 }
+
+func ListProductIds(ctx context.Context, req *product.Empty, callOptions ...callopt.Option) (resp *product.ListProductIdsResp, err error) {
+	resp, err = defaultClient.ListProductIds(ctx, req, callOptions...)
+	if err != nil {
+		klog.CtxErrorf(ctx, "ListProductIds call failed,err =%+v", err)
+		return nil, err
+	}
+	return resp, nil
+}

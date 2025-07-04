@@ -4,6 +4,7 @@ package product;
 
 option go_package ="/product";
 
+
 service ProductCatalogService {
   // 列出产品
   rpc ListProducts(ListProductsReq) returns (ListProductsResp) {} ;
@@ -13,7 +14,11 @@ service ProductCatalogService {
   rpc SearchProducts (SearchProductsReq) returns (SearchProductsResp) {} ;
   // 更新产品信息
   rpc UpdateProduct (UpdateProductReq) returns (UpdateProductResp) {} ;
+  // 查询所有产品ID
+  rpc ListProductIds (Empty) returns (ListProductIdsResp) {};
 }
+
+message Empty {}
 
 message ListProductsReq {
   int32 page = 1;
@@ -61,4 +66,8 @@ message UpdateProductReq{
 
 message UpdateProductResp{
   Product product = 1;
+}
+
+message ListProductIdsResp{
+  repeated uint32 id = 1;
 }

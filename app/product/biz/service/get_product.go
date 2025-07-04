@@ -5,7 +5,7 @@ import (
 	"github.com/cloudwego/kitex/pkg/kerrors"
 	"gomall/app/product/biz/dal/mysql"
 	"gomall/app/product/biz/model"
-	product "gomall/rpc_gen/kitex_gen/product"
+	"gomall/rpc_gen/kitex_gen/product"
 )
 
 type GetProductService struct {

@@ -5,6 +5,8 @@ go 1.24.4
 replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
 
 require (
+	github.com/bits-and-blooms/bitset v1.10.0 // indirect
+	github.com/bits-and-blooms/bloom/v3 v3.7.0 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect

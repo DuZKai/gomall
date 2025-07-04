@@ -47,3 +47,10 @@ func (s *ProductCatalogServiceImpl) UpdateProduct(ctx context.Context, req *prod
 	resp, err = service.NewUpdateProductService(ctx).Run(req)
 	return resp, err
 }
+
+// ListProductIds implements the ProductCatalogServiceImpl interface.
+func (s *ProductCatalogServiceImpl) ListProductIds(ctx context.Context, req *product.Empty) (resp *product.ListProductIdsResp, err error) {
+	resp, err = service.NewListProductIdsService(ctx).Run()
+
+	return resp, err
+}

@@ -52,3 +52,9 @@ func (p ProductQuery) UpdateProduct(productId int, product *Product) (err error)
 	}
 	return nil
 }
+
+// 查询所有ID
+func (p ProductQuery) GetAllId() (ids []*uint32, err error) {
+	err = p.db.WithContext(p.ctx).Model(&Product{}).Select("id").Find(&ids).Error
+	return
+}
