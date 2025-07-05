@@ -30,6 +30,7 @@ func main() {
 	_ = godotenv.Load()
 	dal.Init()
 	opts := kitexInit()
+	// bloomExample()
 
 	// 启动 Gin 接口服务（单独协程）
 	go func() {
@@ -182,7 +183,7 @@ func kitexInit() (opts []server.Option) {
 
 func bloomExample() {
 	// 创建 Redis 客户端
-	client := redisInit.RedisClient
+	client := redisInit.RedisBloomClient
 	ctx := context.Background()
 
 	// 删除已有的布隆过滤器（如果存在）

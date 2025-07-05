@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	RedisClient *redis.Client
+	RedisClient      *redis.Client
+	RedisBloomClient *redis.Client
 )
 
 func Init() {
@@ -19,6 +20,16 @@ func Init() {
 		DB:       conf.GetConf().Redis.DB,
 	})
 	if err := RedisClient.Ping(context.Background()).Err(); err != nil {
+		panic(err)
+	}
+
+	RedisBloomClient = redis.NewClient(&redis.Options{
+		Addr:     conf.GetConf().RedisBloom.Address,
+		Username: conf.GetConf().RedisBloom.Username,
+		Password: conf.GetConf().RedisBloom.Password,
+		DB:       conf.GetConf().RedisBloom.DB,
+	})
+	if err := RedisBloomClient.Ping(context.Background()).Err(); err != nil {
 		panic(err)
 	}
 }

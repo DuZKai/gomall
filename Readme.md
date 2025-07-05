@@ -204,6 +204,11 @@ docker-compose exec mysql bash
 create database test;
 ```
 
+安装redis-bloom
+```bash
+docker run -d --name redisbloom -p 6381:6379 redislabs/rebloom:latest
+```
+
 linux测试go test
 ```bash
 go test -v user_test.go

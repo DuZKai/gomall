@@ -18,11 +18,12 @@ var (
 )
 
 type Config struct {
-	Env      string
-	Kitex    Kitex    `yaml:"kitex"`
-	MySQL    MySQL    `yaml:"mysql"`
-	Redis    Redis    `yaml:"redis"`
-	Registry Registry `yaml:"registry"`
+	Env        string
+	Kitex      Kitex      `yaml:"kitex"`
+	MySQL      MySQL      `yaml:"mysql"`
+	Redis      Redis      `yaml:"redis"`
+	Registry   Registry   `yaml:"registry"`
+	RedisBloom RedisBloom `yaml:"redis_bloom"`
 }
 
 type MySQL struct {
@@ -30,6 +31,13 @@ type MySQL struct {
 }
 
 type Redis struct {
+	Address  string `yaml:"address"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+}
+
+type RedisBloom struct {
 	Address  string `yaml:"address"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`

@@ -21,3 +21,9 @@ redis:
   username: ""
   password: "redis"
   db: 0
+
+redis_bloom:
+  address: "192.168.101.65:6381"
+  username: ""
+  password: ""
+  db: 0
