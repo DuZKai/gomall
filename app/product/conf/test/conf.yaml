@@ -27,3 +27,8 @@ redis_bloom:
   username: ""
   password: ""
   db: 0
+
+minio:
+  endpoint: "192.168.101.65:9000"
+  accessKey: "minioadmin"
+  secretKey: "minioadmin"

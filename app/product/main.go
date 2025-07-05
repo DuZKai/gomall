@@ -15,6 +15,7 @@ import (
 	"gomall/app/product/biz/dal"
 	redisInit "gomall/app/product/biz/dal/redis"
 	"gomall/app/product/biz/service"
+	minioTest "gomall/app/product/biz/test"
 	"gomall/app/product/conf"
 	"gomall/rpc_gen/kitex_gen/product"
 	"gomall/rpc_gen/kitex_gen/product/productcatalogservice"
@@ -31,6 +32,7 @@ func main() {
 	dal.Init()
 	opts := kitexInit()
 	// bloomExample()
+	// minioExample()
 
 	// 启动 Gin 接口服务（单独协程）
 	go func() {
@@ -286,4 +288,17 @@ func bloomExample() {
 
 	// 结束
 	fmt.Println("All operations completed.")
+}
+
+func minioExample() {
+	minioTest.TestMinioUpload()
+	log.Println("File uploaded successfully")
+	minioTest.TestListObjects()
+	log.Println("List objects successfully")
+	minioTest.TestGetPresignedGetObject()
+	log.Println("Get presigned URL successfully")
+	minioTest.TestMinioDownloadFile()
+	log.Println("File downloaded successfully")
+	minioTest.TestDeleteFile()
+	log.Println("File deleted successfully")
 }

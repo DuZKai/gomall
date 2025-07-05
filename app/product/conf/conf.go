@@ -24,10 +24,17 @@ type Config struct {
 	Redis      Redis      `yaml:"redis"`
 	Registry   Registry   `yaml:"registry"`
 	RedisBloom RedisBloom `yaml:"redis_bloom"`
+	Minio      Minio      `yaml:"minio"`
 }
 
 type MySQL struct {
 	DSN string `yaml:"dsn"`
+}
+
+type Minio struct {
+	Endpoint  string `yaml:"endpoint"`
+	AccessKey string `yaml:"accessKey"`
+	SecretKey string `yaml:"secretKey"`
 }
 
 type Redis struct {
