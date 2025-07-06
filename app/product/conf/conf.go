@@ -26,6 +26,7 @@ type Config struct {
 	RedisBloom RedisBloom `yaml:"redis_bloom"`
 	Minio      Minio      `yaml:"minio"`
 	ES         ES         `yaml:"elasticsearch"`
+	OSS        OSS        `yaml:"alioss"`
 }
 
 type MySQL struct {
@@ -50,6 +51,13 @@ type RedisBloom struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	DB       int    `yaml:"db"`
+}
+
+type OSS struct {
+	BucketName      string `yaml:"bucket-name"`
+	Endpoint        string `yaml:"endpoint"`
+	AccessKeyId     string `yaml:"access-key-id"`
+	AccessKeySecret string `yaml:"access-key-secret"`
 }
 
 type Kitex struct {

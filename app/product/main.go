@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gomall/app/product/biz/dal"
 	"gomall/app/product/biz/dal/es"
+	"gomall/app/product/biz/dal/oss"
 	redisInit "gomall/app/product/biz/dal/redis"
 	"gomall/app/product/biz/service"
 	minioTest "gomall/app/product/biz/test"
@@ -36,7 +37,7 @@ func main() {
 	// bloomExample()
 	// minioExample()
 	// esExample()
-
+	ossExample()
 }
 
 func setupGinRouter() *gin.Engine {
@@ -311,7 +312,6 @@ func minioExample() {
 }
 
 func esExample() {
-	// 这里可以调用之前定义的 GetDocument 函数来查询文档
 	ctx := context.Background()
 
 	// 查询文档
@@ -361,4 +361,11 @@ func esExample() {
 		log.Fatalf("Error deleting course index: %v", err)
 	}
 	log.Printf("Delete course index ok? %v", ok)
+}
+
+func ossExample() {
+	oSSClient := oss.OSSClient
+	objectKey := "main1.go"
+	localPath := "/root/go/src/gomall/app/product/main.go"
+	util.UploadFileToOss(oSSClient, oss.BucketName, objectKey, localPath)
 }
