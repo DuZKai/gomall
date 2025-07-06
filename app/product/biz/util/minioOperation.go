@@ -1,4 +1,4 @@
-package minioOperaion
+package util
 
 import (
 	"context"

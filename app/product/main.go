@@ -13,9 +13,11 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap/zapcore"
 	"gomall/app/product/biz/dal"
+	"gomall/app/product/biz/dal/es"
 	redisInit "gomall/app/product/biz/dal/redis"
 	"gomall/app/product/biz/service"
 	minioTest "gomall/app/product/biz/test"
+	"gomall/app/product/biz/util"
 	"gomall/app/product/conf"
 	"gomall/rpc_gen/kitex_gen/product"
 	"gomall/rpc_gen/kitex_gen/product/productcatalogservice"
@@ -30,24 +32,11 @@ import (
 func main() {
 	_ = godotenv.Load()
 	dal.Init()
-	opts := kitexInit()
+	// ginExample()
 	// bloomExample()
 	// minioExample()
+	esExample()
 
-	// 启动 Gin 接口服务（单独协程）
-	go func() {
-		r := setupGinRouter()
-		if err := r.Run(":8079"); err != nil {
-			panic("failed to start gin: " + err.Error())
-		}
-	}()
-
-	svr := productcatalogservice.NewServer(new(ProductCatalogServiceImpl), opts...)
-
-	err := svr.Run()
-	if err != nil {
-		klog.Error(err.Error())
-	}
 }
 
 func setupGinRouter() *gin.Engine {
@@ -290,6 +279,24 @@ func bloomExample() {
 	fmt.Println("All operations completed.")
 }
 
+func ginExample() {
+	opts := kitexInit()
+	// 启动 Gin 接口服务（单独协程）
+	go func() {
+		r := setupGinRouter()
+		if err := r.Run(":8079"); err != nil {
+			panic("failed to start gin: " + err.Error())
+		}
+	}()
+
+	svr := productcatalogservice.NewServer(new(ProductCatalogServiceImpl), opts...)
+
+	err := svr.Run()
+	if err != nil {
+		klog.Error(err.Error())
+	}
+}
+
 func minioExample() {
 	minioTest.TestMinioUpload()
 	log.Println("File uploaded successfully")
@@ -301,4 +308,35 @@ func minioExample() {
 	log.Println("File downloaded successfully")
 	minioTest.TestDeleteFile()
 	log.Println("File deleted successfully")
+}
+
+func esExample() {
+	// 这里可以调用之前定义的 GetDocument 函数来查询文档
+	ctx := context.Background()
+
+	pageParams := util.PageParams{
+		PageNo:   1,
+		PageSize: 10,
+	}
+
+	courseSearchParam := util.SearchCourseParamDto{
+		// Keywords: "golang",
+		// Mt:       "programming",
+		// St:       "advanced",
+		// Grade:    "graduate",
+	}
+
+	searchPageResultDto, err := util.QueryCoursePubNewIndex(ctx, es.ESClient, pageParams, courseSearchParam, es.Index, es.SourceFields)
+	if err != nil {
+		return
+	}
+
+	log.Printf("Search Results: %+v\n", searchPageResultDto)
+
+	// doc, err := esOpeation.GetDocument(ctx, index, docID)
+	// if err != nil {
+	// 	log.Fatalf("Error getting document: %v", err)
+	// }
+	//
+	// fmt.Printf("Document: %+v\n", doc)
 }

@@ -18,7 +18,7 @@ const (
 func TestMinioUpload() {
 	ctx := context.Background()
 
-	err := minioOperaion.UploadFile(ctx, bucket, objectName, filePath)
+	err := util.UploadFile(ctx, bucket, objectName, filePath)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +27,7 @@ func TestMinioUpload() {
 // 测试下载文件
 func TestMinioDownloadFile() {
 	ctx := context.Background()
-	err := minioOperaion.DownloadFile(ctx, bucket, objectName, downloadFilePath)
+	err := util.DownloadFile(ctx, bucket, objectName, downloadFilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -36,7 +36,7 @@ func TestMinioDownloadFile() {
 // 测试列出bucket下所有的对象
 func TestListObjects() {
 	ctx := context.Background()
-	objects, err := minioOperaion.ListObjects(ctx, bucket, "")
+	objects, err := util.ListObjects(ctx, bucket, "")
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +46,7 @@ func TestListObjects() {
 // 删除对象
 func TestDeleteFile() {
 	ctx := context.Background()
-	ret, err := minioOperaion.DeleteFile(ctx, bucket, objectName)
+	ret, err := util.DeleteFile(ctx, bucket, objectName)
 	if err != nil {
 		panic(err)
 	}
@@ -56,7 +56,7 @@ func TestDeleteFile() {
 // 获取对象，返回url
 func TestGetPresignedGetObject() {
 	ctx := context.Background()
-	object, err := minioOperaion.GetPresignedURL(ctx, bucket, objectName, 24*time.Hour)
+	object, err := util.GetPresignedURL(ctx, bucket, objectName, 24*time.Hour)
 	if err != nil {
 		panic(err)
 	}

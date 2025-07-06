@@ -32,3 +32,9 @@ minio:
   endpoint: "192.168.101.65:9000"
   accessKey: "minioadmin"
   secretKey: "minioadmin"
+
+elasticsearch:
+  hostlist:
+    - "http://192.168.101.65:9200"
+  index: "course-publish"
+  source_fields: "id,name,grade,mt,st,charge,pic,price,originalPrice,teachmode,validDays,createDate,teacherNames,tags,companyName,isAd"

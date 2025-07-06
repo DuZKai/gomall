@@ -25,6 +25,7 @@ type Config struct {
 	Registry   Registry   `yaml:"registry"`
 	RedisBloom RedisBloom `yaml:"redis_bloom"`
 	Minio      Minio      `yaml:"minio"`
+	ES         ES         `yaml:"elasticsearch"`
 }
 
 type MySQL struct {
@@ -65,6 +66,12 @@ type Registry struct {
 	RegistryAddress []string `yaml:"registry_address"`
 	Username        string   `yaml:"username"`
 	Password        string   `yaml:"password"`
+}
+
+type ES struct {
+	Hostlist     []string `yaml:"hostlist"`
+	Index        string   `yaml:"index"`
+	SourceFields string   `yaml:"source_fields"`
 }
 
 // GetConf gets configuration instance
