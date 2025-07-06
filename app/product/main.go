@@ -314,29 +314,53 @@ func esExample() {
 	// 这里可以调用之前定义的 GetDocument 函数来查询文档
 	ctx := context.Background()
 
-	pageParams := util.PageParams{
-		PageNo:   1,
-		PageSize: 10,
-	}
-
-	courseSearchParam := util.SearchCourseParamDto{
-		// Keywords: "golang",
-		// Mt:       "programming",
-		// St:       "advanced",
-		// Grade:    "graduate",
-	}
-
-	searchPageResultDto, err := util.QueryCoursePubNewIndex(ctx, es.ESClient, pageParams, courseSearchParam, es.Index, es.SourceFields)
-	if err != nil {
-		return
-	}
-
-	log.Printf("Search Results: %+v\n", searchPageResultDto)
-
-	// doc, err := esOpeation.GetDocument(ctx, index, docID)
-	// if err != nil {
-	// 	log.Fatalf("Error getting document: %v", err)
+	// 查询文档
+	// pageParams := util.PageParams{
+	// 	PageNo:   1,
+	// 	PageSize: 10,
 	// }
 	//
-	// fmt.Printf("Document: %+v\n", doc)
+	// searchPageResultDto, err := util.QueryCoursePubNewIndex(ctx, es.ESClient, pageParams, util.SearchCourseParamDto{}, es.Index, es.SourceFields)
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// log.Printf("Search Results: %+v\n", searchPageResultDto)
+
+	// 增加课程索引示例
+	// myCourseIndex := util.CourseIndex{
+	// 	ID:            123,
+	// 	Name:          "Golang Programming",
+	// 	Grade:         "advanced",
+	// 	Mt:            "programming",
+	// 	St:            "advanced",
+	// 	Charge:        "free",
+	// 	Pic:           "https://example.com/pic.jpg",
+	// 	Price:         0.0,
+	// 	OriginalPrice: 0.0,
+	// 	Teachmode:     "online",
+	// 	ValidDays:     30,
+	// 	CreateDate:    "2023-10-01",
+	// 	CompanyName:   "Tech Academy",
+	// 	IsAd:          "no",
+	// }
+	// ok, err := util.AddCourseIndex(ctx, es.ESClient, es.Index, "123", myCourseIndex)
+	// if err != nil {
+	// 	log.Fatalf("add failed: %v", err)
+	// }
+	// log.Printf("add ok? %v", ok)
+
+	// 修改课程索引示例
+	// ok, err := util.UpdateCourseIndex(ctx, es.ESClient, es.Index, "123", map[string]interface{}{"price": 99.9})
+	// if err != nil {
+	// 	log.Fatalf("update failed: %v", err)
+	// }
+	// log.Printf("update ok? %v", ok)
+
+	// 删除课程索引示例
+	ok, err := util.DeleteCourseIndex(ctx, es.ESClient, es.Index, "123")
+	if err != nil {
+		log.Fatalf("Error deleting course index: %v", err)
+	}
+	log.Printf("Delete course index ok? %v", ok)
 }

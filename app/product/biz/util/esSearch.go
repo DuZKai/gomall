@@ -154,6 +154,13 @@ func QueryCoursePubNewIndex(ctx context.Context, client *elasticsearch.Client, p
 	if err != nil {
 		return SearchPageResultDto{}, err
 	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(res.Body)
 	// log.Printf("search response: %+v", res)
 
 	// Parse response
@@ -202,4 +209,102 @@ func QueryCoursePubNewIndex(ctx context.Context, client *elasticsearch.Client, p
 		PageNo:   pageParams.PageNo,
 		PageSize: pageParams.PageSize,
 	}, nil
+}
+
+// AddCourseIndex 在指定索引 indexName 中写入 ID=id 的文档 doc。
+// 返回 true 代表 result 为 "created" 或 "updated"（ES 的幂等语义），否则 false。
+func AddCourseIndex(ctx context.Context, client *elasticsearch.Client,
+	indexName, id string, doc interface{}) (bool, error) {
+
+	// 序列化文档
+	data, err := json.Marshal(doc)
+	if err != nil {
+		return false, err
+	}
+
+	// 构建 IndexRequest
+	req := esapi.IndexRequest{
+		Index:      indexName,
+		DocumentID: id,
+		Body:       bytes.NewReader(data),
+		// 如果希望写完立即可见可加 Refresh:"true"
+	}
+
+	res, err := req.Do(ctx, client)
+	if err != nil {
+		return false, err
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(res.Body)
+
+	// 解析响应，只关心 result 字段
+	var resp struct {
+		Result string `json:"result"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
+		return false, err
+	}
+	return resp.Result == "created" || resp.Result == "updated", nil
+}
+
+// UpdateCourseIndex 更新指定索引 indexName 中 ID=id 的文档 doc。
+// 仅当 ES 返回 "updated" 才视为成功。
+func UpdateCourseIndex(ctx context.Context, client *elasticsearch.Client,
+	indexName, id string, doc interface{}) (bool, error) {
+
+	// ES Update API 需要 {"doc":{…}}
+	body := map[string]interface{}{"doc": doc}
+	data, err := json.Marshal(body)
+	if err != nil {
+		return false, err
+	}
+
+	req := esapi.UpdateRequest{
+		Index:      indexName,
+		DocumentID: id,
+		Body:       bytes.NewReader(data),
+	}
+
+	res, err := req.Do(ctx, client)
+	if err != nil {
+		return false, err
+	}
+	defer res.Body.Close()
+
+	var resp struct {
+		Result string `json:"result"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
+		return false, err
+	}
+	return resp.Result == "updated", nil
+}
+
+// DeleteCourseIndex 删除指定索引 indexName 中 ID=id 的文档。
+// 当 result=="deleted" 表示成功。
+func DeleteCourseIndex(ctx context.Context, client *elasticsearch.Client,
+	indexName, id string) (bool, error) {
+
+	req := esapi.DeleteRequest{
+		Index:      indexName,
+		DocumentID: id,
+	}
+
+	res, err := req.Do(ctx, client)
+	if err != nil {
+		return false, err
+	}
+	defer res.Body.Close()
+
+	var resp struct {
+		Result string `json:"result"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
+		return false, err
+	}
+	return resp.Result == "deleted", nil
 }
