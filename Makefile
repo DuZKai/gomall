@@ -25,3 +25,9 @@ gen-user:
 gen-product:
 	@cd app/product && cwgo server --type RPC --service product --module ${ROOT_MOD}/app/product --pass "-use ${ROOT_MOD}/rpc_gen/kitex_gen" -I ../../idl --idl ../../idl/product.proto
 	@cd rpc_gen && cwgo client -I ../idl --type RPC --service product --module ${ROOT_MOD}/rpc_gen --idl ../idl/product.proto
+
+
+.PHONY: gen-seckill
+gen-seckill:
+	@cd app/seckill && cwgo server --type RPC --service seckill --module ${ROOT_MOD}/app/seckill --pass "-use ${ROOT_MOD}/rpc_gen/kitex_gen" -I ../../idl --idl ../../idl/seckill.proto
+	@cd rpc_gen && cwgo client -I ../idl --type RPC --service seckill --module ${ROOT_MOD}/rpc_gen --idl ../idl/seckill.proto

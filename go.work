@@ -8,4 +8,5 @@ use (
 	rpc_gen
 	app/product
 	app/auth
+	app/seckill
 )

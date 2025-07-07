@@ -37,7 +37,7 @@ func main() {
 	// bloomExample()
 	// minioExample()
 	// esExample()
-	ossExample()
+	// ossExample()
 }
 
 func setupGinRouter() *gin.Engine {
