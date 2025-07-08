@@ -192,6 +192,13 @@ go get github.com/hertz-contrib/sessions
 docker-compose up -d --build
 ```
 
+### Kafka-ui展示
+```bash
+docker run -it -p 8084:8080 -e DYNAMIC_CONFIG_ENABLED=true provectuslabs/kafka-ui
+# 配置IP和端口即可
+```
+
+
 启动docker
 ```bash
 systemctl start docker
