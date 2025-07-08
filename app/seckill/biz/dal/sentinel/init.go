@@ -6,7 +6,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 )
 
-func Init() {
+func Init(prodNum int) {
 	// 初始化 Sentinel
 	err := api.InitDefault()
 	if err != nil {
@@ -16,7 +16,7 @@ func Init() {
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:               "seckill_request",
-			Threshold:              10, // 每秒最多允许 10 个请求
+			Threshold:              1.2 * float64(prodNum), // 每秒最多允许 10 个请求
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
 			StatIntervalInMs:       1000,

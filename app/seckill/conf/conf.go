@@ -23,6 +23,7 @@ type Config struct {
 	MySQL    MySQL    `yaml:"mysql"`
 	Redis    Redis    `yaml:"redis"`
 	Registry Registry `yaml:"registry"`
+	Kafka    Kafka    `yaml:"kafka"`
 }
 
 type MySQL struct {
@@ -50,6 +51,10 @@ type Registry struct {
 	RegistryAddress []string `yaml:"registry_address"`
 	Username        string   `yaml:"username"`
 	Password        string   `yaml:"password"`
+}
+
+type Kafka struct {
+	Address []string `yaml:"address"`
 }
 
 // GetConf gets configuration instance

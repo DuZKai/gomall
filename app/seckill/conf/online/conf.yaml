@@ -27,3 +27,7 @@ redis_bloom:
   username: ""
   password: ""
   db: 0
+
+kafka:
+  address:
+    - "192.168.101.65:9092"
