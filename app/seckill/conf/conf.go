@@ -55,6 +55,7 @@ type Registry struct {
 
 type Kafka struct {
 	Address []string `yaml:"address"`
+	Topic   string   `yaml:"topic"`
 }
 
 // GetConf gets configuration instance

@@ -7,19 +7,15 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/gin-gonic/gin"
 	"gomall/app/seckill/biz/dal/kafka"
+	"gomall/app/seckill/biz/model"
+	"gomall/app/seckill/conf"
 	"net/http"
 	"time"
 )
 
-type SeckillRequest struct {
-	UserID     string `json:"user_id"`
-	ActivityID string `json:"activity_id"`
-	Captcha    string `json:"captcha"`
-}
-
 func SeckillRequestHandler(c *gin.Context) {
 	// 第一步: 验证资格接口
-	var req SeckillRequest
+	var req model.SeckillRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误: " + err.Error()})
 		return
@@ -41,7 +37,7 @@ func SeckillRequestHandler(c *gin.Context) {
 
 	// 第二步：限流判断
 	// TODO：按照消息队列长度限流
-	entry, blockErr := api.Entry("seckill_request", api.WithTrafficType(base.Inbound))
+	entry, blockErr := api.Entry(conf.GetConf().Kafka.Topic, api.WithTrafficType(base.Inbound))
 	if blockErr != nil {
 		// 被限流
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited"})
@@ -58,7 +54,7 @@ func SeckillRequestHandler(c *gin.Context) {
 	jsonBytes, _ := json.Marshal(msgBody)
 
 	msg := &sarama.ProducerMessage{
-		Topic: "seckill_requests",
+		Topic: conf.GetConf().Kafka.Topic,
 		Key:   sarama.StringEncoder(activityID), // 按活动 ID 分区
 		Value: sarama.ByteEncoder(jsonBytes),
 	}

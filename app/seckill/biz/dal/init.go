@@ -11,5 +11,5 @@ func Init() {
 	// redis.Init()
 	// mysql.Init()
 	sentinel.Init(prodNum)
-	kafka.KafkaProducer = kafka.InitKafkaProducer()
+	kafka.Init()
 }

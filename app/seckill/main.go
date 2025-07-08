@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gomall/app/seckill/biz/dal"
+	"gomall/app/seckill/biz/dal/kafka"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/cloudwego/kitex/pkg/klog"
@@ -19,15 +25,33 @@ import (
 
 func main() {
 
-	dal.Init()
+	// 创建上下文用于退出
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	kafka.InitKafkaConsumerGroup(ctx) // 后台启动消费者
+
+	go dal.Init()
 	// kitexRun()
-	seckillInit()
+	go seckillInit()
+
+	// 等待退出信号
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	<-sig
+
+	fmt.Println("Shutting down gracefully...")
+	cancel() // 通知消费者退出
+	_ = kafka.ConsumerGroup.Close()
 }
 
 func seckillInit() {
 	r := gin.Default()
 	r.POST("/seckill/request", util.SeckillRequestHandler)
-	r.Run(":8080")
+	err := r.Run(":8080")
+	if err != nil {
+		return
+	}
 }
 
 func kitexRun() {
