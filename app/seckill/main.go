@@ -48,6 +48,7 @@ func main() {
 func seckillInit() {
 	r := gin.Default()
 	r.POST("/seckill/request", util.SeckillRequestHandler)
+	r.GET("/seckill/status", util.SeckillStatusHandler)
 	err := r.Run(":8080")
 	if err != nil {
 		return
