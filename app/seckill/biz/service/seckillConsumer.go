@@ -79,7 +79,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		stockKey := fmt.Sprintf("seckill_stock:%s", req.ActivityID)
 		tokenKey := fmt.Sprintf("seckill_token:%s:%s", req.UserID, req.ActivityID)
 		tokenVal := fmt.Sprintf("token:%s:%s:%d", req.UserID, req.ActivityID, time.Now().UnixNano())
-		tokenTTL := 120 // 秒
+		tokenTTL := 30 * 60 // 30分钟
 		result, err := redis.RedisClient.Eval(ctx, luaScript, []string{stockKey, tokenKey}, tokenVal, tokenTTL).Result()
 		if err != nil {
 			log.Printf("[Consumer] Lua eval failed: %v", err)

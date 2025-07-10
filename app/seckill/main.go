@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/kafka"
 	"net"
@@ -29,6 +30,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	kafka.InitKafkaConsumerGroup(ctx) // 后台启动消费者
 
 	go dal.Init()
@@ -49,6 +55,7 @@ func seckillInit() {
 	r := gin.Default()
 	r.POST("/seckill/request", util.SeckillRequestHandler)
 	r.GET("/seckill/status", util.SeckillStatusHandler)
+	r.POST("/seckill/checkout", util.SeckillCheckoutHandler)
 	err := r.Run(":8080")
 	if err != nil {
 		return
