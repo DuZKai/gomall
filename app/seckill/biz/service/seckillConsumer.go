@@ -61,51 +61,6 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			continue
 		}
 
-		// // 第六步：库存判断、生成 token
-		// stockKey := fmt.Sprintf("seckill_stock:%s", req.ActivityID)
-		//
-		// // Lua 脚本原子扣减库存
-		// luaScript := `
-		// 	if redis.call("get", KEYS[1]) and tonumber(redis.call("get", KEYS[1])) > 0 then
-		// 		return redis.call("decr", KEYS[1])
-		// 	else
-		// 		return -1
-		// 	end
-		// `
-		// result, err := redis.RedisClient.Eval(ctx, luaScript, []string{stockKey}).Int()
-		// if err != nil {
-		// 	log.Printf("[Consumer] Redis Eval error: %v", err)
-		// 	continue
-		// }
-		// // 如果库存不足，返回 -1
-		// if result < 0 {
-		// 	log.Printf("[Consumer] Stock empty for activity %s", req.ActivityID)
-		// 	redis.RedisClient.Set(ctx, fmt.Sprintf("seckill_fail:%s:%s", req.UserID, req.ActivityID), 1, time.Minute)
-		// 	sess.MarkMessage(msg, "")
-		// 	continue
-		// }
-		//
-		// // 生成秒杀 token
-		// // key 为幂等控制：user+activity 唯一标识
-		// tokenKey := fmt.Sprintf("seckill_token:%s:%s", req.UserID, req.ActivityID)
-		//
-		// // 查询是否已生成过 token（幂等）
-		// existToken, err := redis.RedisClient.Get(ctx, tokenKey).Result()
-		// if err == nil && existToken != "" {
-		// 	log.Printf("[Consumer] Duplicate token exists for user %s: %s", req.UserID, existToken)
-		// 	sess.MarkMessage(msg, "")
-		// 	continue
-		// }
-		//
-		// // 写入 Redis（幂等键），保证只有第一次写成功
-		// err = redis.RedisClient.Set(ctx, tokenKey, time.Now().UnixNano(), 2*time.Minute).Err()
-		// if err != nil {
-		// 	log.Printf("[Consumer] Redis set token error: %v", err)
-		// 	continue
-		// }
-		//
-		// log.Printf("[Consumer] User %s got token for activity %s, token = %s", req.UserID, req.ActivityID, tokenKey)
-
 		// 第六步：库存判断，生成 token
 		luaScript := `
 			if redis.call("get", KEYS[2]) then
