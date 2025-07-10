@@ -9,6 +9,7 @@ docker ps
 # 如果需要查看日志可以使用
 docker-compose logs -f
 ```
+PS: 如果有错误，可以先手动docker pull对应镜像再执行上面的命令。
 
 需要停止可以使用
 ```bash

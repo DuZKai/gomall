@@ -1,6 +1,7 @@
 package dal
 
 import (
+	"gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/kafka"
 	"gomall/app/seckill/biz/dal/mysql"
 	"gomall/app/seckill/biz/dal/redis"
@@ -14,4 +15,5 @@ func Init() {
 	redis.Init()
 	sentinel.Init(prodNum)
 	kafka.Init()
+	asynq.Init()
 }

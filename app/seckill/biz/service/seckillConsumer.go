@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/IBM/sarama"
+	"github.com/hibiken/asynq"
+	ac "gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
 	"log"
 	"time"
 )
+
+var tokenTTL = 15
 
 // 实现 sarama.ConsumerGroupHandler 接口
 type SeckillConsumer struct{}
@@ -79,8 +83,8 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		stockKey := fmt.Sprintf("seckill_stock:%s", req.ActivityID)
 		tokenKey := fmt.Sprintf("seckill_token:%s:%s", req.UserID, req.ActivityID)
 		tokenVal := fmt.Sprintf("token:%s:%s:%d", req.UserID, req.ActivityID, time.Now().UnixNano())
-		tokenTTL := 30 * 60 // 30分钟
-		result, err := redis.RedisClient.Eval(ctx, luaScript, []string{stockKey, tokenKey}, tokenVal, tokenTTL).Result()
+		reidsTokenTTL := tokenTTL * 2 * 60
+		result, err := redis.RedisClient.Eval(ctx, luaScript, []string{stockKey, tokenKey}, tokenVal, reidsTokenTTL).Result()
 		if err != nil {
 			log.Printf("[Consumer] Lua eval failed: %v", err)
 			continue
@@ -103,6 +107,14 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			log.Printf("[Consumer] Duplicate token for user %s: %s", req.UserID, returnToken)
 		case 2:
 			log.Printf("[Consumer] Success, token for user %s: %s", req.UserID, returnToken)
+		}
+
+		task, _ := ac.NewRollbackStockTask(req.UserID, req.ActivityID)
+
+		delay := time.Duration(tokenTTL) * time.Minute
+		_, err = ac.AsynqClient.Enqueue(task, asynq.ProcessIn(delay))
+		if err != nil {
+			log.Printf("[Consumer] Enqueue rollback task failed: %v", err)
 		}
 
 		sess.MarkMessage(msg, "")
