@@ -15,6 +15,8 @@ import (
 )
 
 func RedisLockHandler(c *gin.Context) {
+	// 单位秒
+	lockTTL := 30 * time.Second
 	ctx := context.Background()
 	activityID := c.Query("activity_id")
 	if activityID == "" {
@@ -44,7 +46,7 @@ func RedisLockHandler(c *gin.Context) {
 
 	// 2. 尝试获取分布式锁，避免缓存击穿
 	lockKey := fmt.Sprintf("lock:seckill:activity:%s", activityID)
-	lock, err := rc.Locker.Obtain(ctx, lockKey, 5*time.Second, nil)
+	lock, err := rc.Locker.Obtain(ctx, lockKey, lockTTL, nil)
 	if err == redislock.ErrNotObtained {
 		// 获取锁失败，说明已有其它线程正在加载数据库
 		fmt.Println("lock held by other, wait and retry")
@@ -74,6 +76,28 @@ func RedisLockHandler(c *gin.Context) {
 		}
 	}()
 
+	// 开启“看门狗”续期协程
+	stopWatchdog := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(lockTTL / 2) // 每一半 TTL 续期一次
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				err := lock.Refresh(ctx, lockTTL, nil)
+				if err != nil {
+					fmt.Printf("watchdog refresh failed: %v\n", err)
+					return
+				}
+				fmt.Println("lock refreshed")
+			case <-stopWatchdog:
+				return
+			}
+		}
+	}()
+	defer close(stopWatchdog)
+
+	time.Sleep(100 * time.Second)
 	// 3. 从数据库加载数据
 	var activity model.Activity
 	if err := mysql.DB.WithContext(ctx).First(&activity, activityID).Error; err != nil {
