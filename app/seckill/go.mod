@@ -7,6 +7,7 @@ replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
 require (
 	github.com/IBM/sarama v1.45.2
 	github.com/alibaba/sentinel-golang v1.0.4
+	github.com/bsm/redislock v0.9.4
 	github.com/cloudwego/kitex v0.14.1
 	github.com/gin-gonic/gin v1.10.1
 	github.com/hibiken/asynq v0.25.1

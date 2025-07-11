@@ -3,12 +3,14 @@ package redis
 import (
 	"context"
 
+	"github.com/bsm/redislock"
 	"github.com/redis/go-redis/v9"
 	"gomall/app/seckill/conf"
 )
 
 var (
 	RedisClient *redis.Client
+	Locker      *redislock.Client
 )
 
 func Init() {
@@ -21,4 +23,5 @@ func Init() {
 	if err := RedisClient.Ping(context.Background()).Err(); err != nil {
 		panic(err)
 	}
+	Locker = redislock.New(RedisClient)
 }
