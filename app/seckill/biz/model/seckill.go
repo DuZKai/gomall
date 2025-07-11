@@ -27,3 +27,10 @@ type Order struct {
 	CreateTime time.Time  `db:"create_time"`
 	PayTime    *time.Time `db:"pay_time,omitempty"`
 }
+
+type TokenInfo struct {
+	UserID       string `json:"user_id"`
+	ActivityID   string `json:"activity_id"`
+	CreateTime   int64  `json:"create_time"`    // 纳秒时间戳
+	ExpireSecond int64  `json:"expire_seconds"` // 秒数
+}

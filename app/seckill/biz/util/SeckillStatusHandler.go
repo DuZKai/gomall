@@ -15,8 +15,8 @@ func SeckillStatusHandler(c *gin.Context) {
 		return
 	}
 
-	tokenKey := fmt.Sprintf("seckill_token:%s:%s", userID, activityID)
-	failKey := fmt.Sprintf("seckill_fail:%s:%s", userID, activityID)
+	tokenKey := fmt.Sprintf("seckill_token:%s:%s", activityID, userID)
+	failKey := fmt.Sprintf("seckill_fail:%s:%s", activityID, userID)
 
 	ctx := c.Request.Context()
 

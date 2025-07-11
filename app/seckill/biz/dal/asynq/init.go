@@ -1,13 +1,15 @@
 package asynq
 
 import (
+	"fmt"
 	"github.com/hibiken/asynq"
 	"gomall/app/seckill/conf"
 )
 
 var (
-	AsynqClient *asynq.Client
-	AsynqServer *asynq.Server
+	AsynqClient    *asynq.Client
+	AsynqServer    *asynq.Server
+	AsynqScheduler *asynq.Scheduler
 )
 
 func Init() {
@@ -23,5 +25,17 @@ func Init() {
 			"low":      1,
 		},
 	})
+
+	// 启动定时任务调度器
+	AsynqScheduler = asynq.NewScheduler(redisOpt, &asynq.SchedulerOpts{})
+	_, err := AsynqScheduler.Register("@every 10s", NewRollbackSchedulerTask())
+	if err != nil {
+		panic(fmt.Sprintf("Failed to register rollback scheduler task: %v", err))
+	}
+	go func() {
+		if err := AsynqScheduler.Run(); err != nil {
+			panic(err)
+		}
+	}()
 	AsyncInit()
 }
