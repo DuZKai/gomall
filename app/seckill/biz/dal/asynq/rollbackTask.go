@@ -63,16 +63,25 @@ func HandleRollbackSchedulerTask(ctx context.Context, t *asynq.Task) error {
 		}
 
 		// 回滚库存
+		expireSeconds := token.ExpireSecond
 		stockKey := fmt.Sprintf("seckill_stock:%s", activityID)
+		failKey := fmt.Sprintf("seckill_fail:%s:%s", activityID, userID)
 		luaScript := `
 			if redis.call("exists", KEYS[1]) == 1 then
 				redis.call("incr", KEYS[2])
 				redis.call("del", KEYS[1])
+				-- 创建失败标记，过期时间由 ARGV[1] 指定
+				redis.call("setex", KEYS[3], tonumber(ARGV[1]), 1)
 				return 1
 			end
 			return 0
 		`
-		_, err = rc.RedisClient.Eval(ctx, luaScript, []string{key, stockKey}).Result()
+		_, err = rc.RedisClient.Eval(
+			ctx,
+			luaScript,
+			[]string{key, stockKey, failKey},
+			expireSeconds, // 传给 ARGV[1]
+		).Result()
 		if err != nil {
 			continue
 		}

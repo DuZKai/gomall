@@ -56,6 +56,7 @@ func seckillInit() {
 	r.POST("/seckill/request", util.SeckillRequestHandler)
 	r.GET("/seckill/status", util.SeckillStatusHandler)
 	r.POST("/seckill/checkout", util.SeckillCheckoutHandler)
+	r.POST("/seckill/activity/create", util.CreateSeckillActivity)
 	err := r.Run(":8080")
 	if err != nil {
 		return

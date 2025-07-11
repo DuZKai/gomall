@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// 单位分钟
 var tokenTTL = 1
 
 // 实现 sarama.ConsumerGroupHandler 接口
