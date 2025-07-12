@@ -23,19 +23,19 @@ func NewRollbackSchedulerTask() *asynq.Task {
 
 func HandleRollbackSchedulerTask(ctx context.Context, t *asynq.Task) error {
 	// 获取所有 seckill:token 前缀的 key
-	keys, err := rc.RedisClient.Keys(ctx, "seckill:token:*:*").Result()
+	keys, err := rc.RedisClient.Keys(ctx, "seckill:token:valid:*:*").Result()
 	if err != nil {
 		return err
 	}
-
+	
 	for _, key := range keys {
-		// key = seckill:token:{activityID}:{userID}
+		// key = seckill:token:valid:{activityID}:{userID}
 		parts := strings.Split(key, ":")
-		if len(parts) != 3 {
+		if len(parts) != 5 {
 			continue
 		}
-		activityID := parts[1]
-		userID := parts[2]
+		activityID := parts[3]
+		userID := parts[4]
 
 		// 判断 key 是否存在（已过期则跳过）
 		val, err := rc.RedisClient.Get(ctx, key).Result()
@@ -115,7 +115,7 @@ func HandleRollbackSchedulerTask(ctx context.Context, t *asynq.Task) error {
 // 	userID := payload.UserID
 // 	activityID := payload.ActivityID
 //
-// 	tokenKey := fmt.Sprintf("seckill:token:%s:%s", activityID, userID)
+// 	tokenKey := fmt.Sprintf("seckill:token:valid:%s:%s", activityID, userID)
 // 	stockKey := fmt.Sprintf("seckill:stock:%s", activityID)
 //
 // 	// 如果 token 还存在，说明用户未下单，回滚库存

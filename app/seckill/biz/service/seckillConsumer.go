@@ -80,7 +80,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 
 		// 准备 key 和参数
 		stockKey := fmt.Sprintf("seckill:stock:%s", req.ActivityID)
-		tokenKey := fmt.Sprintf("seckill:token:%s:%s", req.ActivityID, req.UserID)
+		tokenKey := fmt.Sprintf("seckill:token:valid:%s:%s", req.ActivityID, req.UserID)
 
 		token := model.TokenInfo{
 			UserID:       req.UserID,

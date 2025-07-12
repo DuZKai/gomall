@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gomall/app/seckill/biz/dal"
+	"gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/kafka"
 	"net"
 	"os"
@@ -49,6 +50,7 @@ func main() {
 	fmt.Println("Shutting down gracefully...")
 	cancel() // 通知消费者退出
 	_ = kafka.ConsumerGroup.Close()
+	asynq.ShutdownAll()
 }
 
 func seckillInit() {
