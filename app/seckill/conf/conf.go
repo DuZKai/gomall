@@ -51,6 +51,7 @@ type Registry struct {
 	RegistryAddress []string `yaml:"registry_address"`
 	Username        string   `yaml:"username"`
 	Password        string   `yaml:"password"`
+	Env             string   `yaml:"env"`
 }
 
 type Kafka struct {

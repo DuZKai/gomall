@@ -12,6 +12,7 @@ registry:
     - 192.168.101.65:8500
   username: ""
   password: ""
+  env: "online"
 
 mysql:
   dsn: "%s:%s@tcp(%s:3306)/seckill?charset=utf8mb4&parseTime=True&loc=Local"

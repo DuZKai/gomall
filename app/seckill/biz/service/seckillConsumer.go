@@ -7,12 +7,10 @@ import (
 	"github.com/IBM/sarama"
 	"gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
+	"gomall/app/seckill/config"
 	"log"
 	"time"
 )
-
-// 单位分钟
-var tokenTTL = 1
 
 // 实现 sarama.ConsumerGroupHandler 接口
 type SeckillConsumer struct{}
@@ -54,19 +52,19 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			continue
 		}
 		if count == 1 {
-			redis.RedisClient.Expire(ctx, freqKey, 10*time.Second)
+			redis.RedisClient.Expire(ctx, freqKey, time.Duration(config.AppConfig.FreqLimitExpire)*time.Second)
 		}
 		if count > 5 {
 			log.Printf("[Consumer] User %s is too frequent (%d), adding to blacklist", req.UserID, count)
-			redis.RedisClient.Set(ctx, blacklistKey, 1, 30*time.Minute) // 拉黑 30 分钟
+			redis.RedisClient.Set(ctx, blacklistKey, 1, time.Duration(config.AppConfig.BlacklistTTL)*time.Minute)
 			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill:fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
 			sess.MarkMessage(msg, "")
 			continue
 		}
-		
+
 		// 幂等性校验（防止重复消费）
 		idempotentKey := fmt.Sprintf("seckill:msg:%s:%s", req.UserID, req.ActivityID)
-		ok, err := redis.RedisClient.SetNX(ctx, idempotentKey, 1, 10*time.Minute).Result()
+		ok, err := redis.RedisClient.SetNX(ctx, idempotentKey, 1, time.Duration(config.AppConfig.IdempotentKeyExpire)*time.Minute).Result()
 		if err != nil {
 			log.Printf("[Consumer] Redis SetNX error: %v", err)
 			continue
@@ -98,7 +96,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			UserID:       req.UserID,
 			ActivityID:   req.ActivityID,
 			CreateTime:   time.Now().UnixNano(),
-			ExpireSecond: int64(tokenTTL * 60), // 统一单位为秒
+			ExpireSecond: int64(config.AppConfig.TokenTTL * 60), // 统一单位为秒
 		}
 
 		valueBytes, err := json.Marshal(token)
@@ -107,7 +105,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			continue
 		}
 
-		reidsTokenTTL := tokenTTL * 2 * 60
+		reidsTokenTTL := config.AppConfig.TokenTTL * 2 * 60
 		result, err := redis.RedisClient.Eval(ctx, luaScript, []string{stockKey, tokenKey}, valueBytes, reidsTokenTTL).Result()
 		if err != nil {
 			log.Printf("[Consumer] Lua eval failed: %v", err)

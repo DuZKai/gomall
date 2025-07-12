@@ -13,15 +13,11 @@ import (
 	rc "gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
 	"gomall/app/seckill/conf"
+	"gomall/app/seckill/config"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-)
-
-const (
-	BaseTokenRate     = 1200
-	TokenBucketFactor = 5
 )
 
 func SeckillRequestHandler(c *gin.Context) {
@@ -129,7 +125,7 @@ func SeckillRequestHandler(c *gin.Context) {
 		// 使用Redis令牌桶限流
 		// rate: 令牌生成速率（建议=预期QPS×1.2）
 		// capacity: 桶容量（建议=库存×5）
-		if !AllowByTokenBucket(activityID, BaseTokenRate, stockNum*TokenBucketFactor) {
+		if !AllowByTokenBucket(activityID, config.AppConfig.BaseTokenRate, stockNum*config.AppConfig.TokenBucketFactor) {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited (token bucket)"})
 			return
 		}

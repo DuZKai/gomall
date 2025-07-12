@@ -3,6 +3,7 @@ package dal
 import (
 	"github.com/bwmarrin/snowflake"
 	"gomall/app/seckill/biz/dal/asynq"
+	"gomall/app/seckill/biz/dal/consul"
 	"gomall/app/seckill/biz/dal/kafka"
 	"gomall/app/seckill/biz/dal/mysql"
 	"gomall/app/seckill/biz/dal/redis"
@@ -14,6 +15,7 @@ var Node *snowflake.Node
 func Init() {
 	mysql.Init()
 	redis.Init()
+	consul.Init()
 	sentinel.Init()
 	kafka.Init()
 	asynq.Init()

@@ -9,6 +9,7 @@ import (
 	"gomall/app/seckill/biz/dal/mysql"
 	rc "gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
+	"gomall/app/seckill/config"
 	"log"
 	"net/http"
 	"time"
@@ -144,7 +145,7 @@ func cacheSeckillActivity(a model.Activity, startTime int64, endTime int64) erro
 	now = time.Now().UnixNano() / 1e6 // 毫秒
 	err = rc.RedisClient.HSet(ctx, key, map[string]interface{}{
 		"last_mill_second": now,
-		"tokens":           2000,
+		"tokens":           a.Stock * int64(config.AppConfig.CapacityFactor), // 初始令牌数为库存的5倍
 	}).Err()
 	if err != nil {
 		return err

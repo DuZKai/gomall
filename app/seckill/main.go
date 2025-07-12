@@ -7,6 +7,7 @@ import (
 	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/kafka"
+	"gomall/app/seckill/config"
 	"log"
 	"net"
 	"os"
@@ -37,6 +38,8 @@ func main() {
 
 	dal.Init()
 	kafka.InitKafkaConsumerGroup(ctx) // 后台启动消费者
+	config.LoadConfigFromConsul()
+	config.StartConfigWatcher()
 
 	// 启动 Seckill HTTP Server（后台）
 	go seckillInit()
@@ -58,6 +61,21 @@ func main() {
 
 func seckillInit() {
 	r := gin.Default()
+	// 配置
+	r.GET("/config", func(c *gin.Context) {
+		appConfig := config.AppConfig
+		c.JSON(200, gin.H{
+			"token_ttl":             appConfig.TokenTTL,
+			"blacklist_ttl":         appConfig.BlacklistTTL,
+			"freq_limit_expire":     appConfig.FreqLimitExpire,
+			"idempotent_key_expire": appConfig.IdempotentKeyExpire,
+			"bucket_expire_seconds": appConfig.BucketExpireSeconds,
+			"capacity_factor":       appConfig.CapacityFactor,
+			"rate_factor":           appConfig.RateFactor,
+			"base_token_rate":       appConfig.BaseTokenRate,
+			"token_bucket_factor":   appConfig.TokenBucketFactor,
+		})
+	})
 	// 秒杀请求
 	r.POST("/seckill/request", util.SeckillRequestHandler)
 	// 短轮询状态

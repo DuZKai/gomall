@@ -51,10 +51,43 @@ CREATE TABLE activity_stocks (
     stock INT NOT NULL COMMENT "活动库存"
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀活动库存表' COMMENT='秒杀活动库存表';
 ;
-
-
 ```
 
+consul配置新建不同环境的key-value
+- config/dev/seckill_limits
+- config/online/seckill_limits
+- config/test/seckill_limits
+代码如下：
+```JSON
+{
+  "token_ttl": 1,
+  "_token_ttl_comment": "Token 有效时间（分钟）",
+
+  "blacklist_ttl": 30,
+  "_blacklist_ttl_comment": "黑名单拉黑时间（分钟）",
+
+  "freq_limit_expire": 10,
+  "_freq_limit_expire_comment": "访问频率限制键过期时间（秒）",
+
+  "idempotent_key_expire": 10,
+  "_idempotent_key_expire_comment": "幂等性校验键过期时间（分钟）",
+
+  "bucket_expire_seconds": 10,
+  "_bucket_expire_seconds_comment": "Redis 中令牌桶 key 的过期时间（秒）",
+
+  "capacity_factor": 5,
+  "_capacity_factor_comment": "桶容量动态调整因子（capacity = stock * factor）",
+
+  "rate_factor": 2,
+  "_rate_factor_comment": "令牌生成速率动态调整因子（rate = stock * factor）",
+
+  "base_token_rate": 1200,
+  "_base_token_rate_comment": "默认基础令牌生成速率（每秒）",
+
+  "token_bucket_factor": 5,
+  "_token_bucket_factor_comment": "令牌桶限流通用因子（可作倍率）"
+}
+```
 
 安装完成后使用如下命令启动
 ```bash
