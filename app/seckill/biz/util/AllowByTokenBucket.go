@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	rc "gomall/app/seckill/biz/dal/redis"
+	"log"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func AllowByTokenBucket(activityID string, baseRate int, baseCapacity int) bool 
         
         -- 计算时间间隔新增的 tokens
         local delta = math.max(0, now - last_time)
-        local added_tokens = math.floor(delta / 1000 * dynamic_rate)
+        local added_tokens = delta * dynamic_rate / 1000
         tokens = math.min(tokens + added_tokens, dynamic_capacity)
         
         -- 判断是否有可用 token
@@ -58,8 +59,7 @@ func AllowByTokenBucket(activityID string, baseRate int, baseCapacity int) bool 
 		now, baseRate, baseCapacity).Result()
 
 	if err != nil {
-		// 生产环境应记录日志而不是panic
-		panic(err)
+		log.Printf("[AllowByTokenBucket] Lua script execution failed: %v", err)
 		return false
 	}
 

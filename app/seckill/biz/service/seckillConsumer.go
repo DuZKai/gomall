@@ -63,6 +63,18 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			sess.MarkMessage(msg, "")
 			continue
 		}
+		
+		// 幂等性校验（防止重复消费）
+		idempotentKey := fmt.Sprintf("seckill:msg:%s:%s", req.UserID, req.ActivityID)
+		ok, err := redis.RedisClient.SetNX(ctx, idempotentKey, 1, 10*time.Minute).Result()
+		if err != nil {
+			log.Printf("[Consumer] Redis SetNX error: %v", err)
+			continue
+		}
+		if !ok {
+			log.Printf("[Consumer] Duplicate request detected for user %s, activity %s. Skipping.", req.UserID, req.ActivityID)
+			continue
+		}
 
 		// 第六步：库存判断，生成 token
 		luaScript := `
@@ -91,7 +103,8 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 
 		valueBytes, err := json.Marshal(token)
 		if err != nil {
-			log.Fatalf("Failed to marshal token info: %v", err)
+			log.Printf("[Consumer] Failed to marshal token info: %v", err)
+			continue
 		}
 
 		reidsTokenTTL := tokenTTL * 2 * 60
@@ -120,7 +133,9 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 			log.Printf("[Consumer] Success, token for user %s: %s", req.UserID, returnToken)
 		}
 
-		sess.MarkMessage(msg, "")
+		if statusCode == 2 || statusCode == 1 || statusCode == 0 {
+			sess.MarkMessage(msg, "") // 成功、重复、库存空才确认
+		}
 	}
 	return nil
 }

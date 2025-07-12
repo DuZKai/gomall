@@ -13,9 +13,15 @@ import (
 	rc "gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
 	"gomall/app/seckill/conf"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
+)
+
+const (
+	BaseTokenRate     = 1200
+	TokenBucketFactor = 5
 )
 
 func SeckillRequestHandler(c *gin.Context) {
@@ -34,6 +40,7 @@ func SeckillRequestHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing parameters"})
 		return
 	}
+	log.Printf("[SeckillRequest] user=%s, activity=%s, priority=%d, captcha=%s", userID, activityID, req.Priority, captcha)
 
 	// 判断活动是否开始
 	activityKey := fmt.Sprintf("seckill:activity:%s", activityID)
@@ -118,14 +125,17 @@ func SeckillRequestHandler(c *gin.Context) {
 			return
 		}
 		defer entry.Exit()
-	} else { // 普通用户
+	} else if req.Priority == 0 { // 普通用户
 		// 使用Redis令牌桶限流
 		// rate: 令牌生成速率（建议=预期QPS×1.2）
 		// capacity: 桶容量（建议=库存×5）
-		if !AllowByTokenBucket(activityID, 1200, stockNum*5) { // 参数调整为：rate=1000, capacity=5000
+		if !AllowByTokenBucket(activityID, BaseTokenRate, stockNum*TokenBucketFactor) {
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited (token bucket)"})
 			return
 		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid priority"})
+		return
 	}
 
 	// 第三步：构造 Kafka 消息并异步发送
@@ -142,7 +152,23 @@ func SeckillRequestHandler(c *gin.Context) {
 		Value: sarama.ByteEncoder(jsonBytes),
 	}
 
-	kafka.KafkaProducer.Input() <- msg
+	select {
+	case kafka.KafkaProducer.Input() <- msg:
+		log.Printf("[Kafka] 投递成功: user=%s, activity=%s", userID, activityID)
+
+		msgTimeKey := fmt.Sprintf("seckill:msg_time:%s:%s", activityID, userID)
+		err := rc.RedisClient.Set(ctx, msgTimeKey, time.Now().Unix(), 2*time.Minute).Err()
+		if err != nil {
+			log.Printf("[Redis] 设置 msg_time 失败: %v", err)
+			// 如果写入失败可以继续处理（非致命），也可以根据策略决定是否回滚 Kafka 投递
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Request accepted, queuing..."})
+
+	default:
+		log.Printf("[Kafka] 投递失败: user=%s, activity=%s", userID, activityID)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "server busy, try again later"})
+		return
+	}
 	// 查看容器内是否有消息
 	// docker exec -it kafka bash
 	// kafka-console-consumer.sh \
@@ -150,6 +176,5 @@ func SeckillRequestHandler(c *gin.Context) {
 	//  --topic seckill_requests \
 	//  --from-beginning
 
-	c.JSON(http.StatusOK, gin.H{"message": "Request accepted, queuing..."})
-
+	log.Printf("[SeckillRequest][OK] user=%s 请求进入队列", userID)
 }

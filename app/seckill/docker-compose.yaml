@@ -30,6 +30,7 @@ services:
     volumes:
       - redis-data:/data
     command: [ "redis-server", "--appendonly", "yes" ]
+
   mysql:
     image: 'mysql:9.3.0'
     container_name: mysql
@@ -43,6 +44,7 @@ services:
       MYSQL_DATABASE: seckill
       MYSQL_USER: mysql
       MYSQL_PASSWORD: mysql
+
   asynqmon:
     image: hibiken/asynqmon
     container_name: asynq-monitor
@@ -53,6 +55,17 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+
+  consul:
+    image: consul:1.15.4
+    container_name: consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: agent -dev -client=0.0.0.0
+    volumes:
+      - consul_data:/consul/data
 volumes:
   redis-data:
   mysql_data:
+  consul_data:

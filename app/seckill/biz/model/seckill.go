@@ -57,3 +57,8 @@ type Activity struct {
 	Remark     string `gorm:"column:remark"`
 	CreateAt   int64  `gorm:"column:create_at"`
 }
+
+type ActivityStock struct {
+	ActivityID string `json:"activity_id"`
+	Stock      int64  `json:"stock"`
+}

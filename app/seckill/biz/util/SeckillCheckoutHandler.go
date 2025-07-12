@@ -7,11 +7,14 @@ import (
 	"gomall/app/seckill/biz/dal/mysql"
 	rc "gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
+	"gorm.io/gorm"
+	"log"
 	"net/http"
 	"time"
 )
 
 func SeckillCheckoutHandler(c *gin.Context) {
+	log.Println("[CheckoutHandler] Processing checkout request")
 	var req model.CheckoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
@@ -45,6 +48,15 @@ func SeckillCheckoutHandler(c *gin.Context) {
 		}
 	}()
 
+	// 判断是否重复下单（幂等处理）
+	var existing model.Order
+	if err := tx.Where("user_id = ? AND activity_id = ?", req.UserID, req.ActivityID).First(&existing).Error; err == nil {
+		tx.Rollback()
+		log.Println("[CheckoutHandler] Duplicate order attempt detected")
+		c.JSON(http.StatusConflict, gin.H{"error": "duplicate order"})
+		return
+	}
+
 	// 插入订单
 	err = tx.Create(&model.Order{
 		UserID:     req.UserID,
@@ -58,15 +70,40 @@ func SeckillCheckoutHandler(c *gin.Context) {
 		return
 	}
 
-	// Redis 删除 token
-	err = rc.RedisClient.Del(ctx, tokenKey).Err()
-	if err != nil {
+	res := tx.Model(&model.ActivityStock{}).
+		Where("activity_id = ? AND stock > 0", req.ActivityID).
+		Update("stock", gorm.Expr("stock - ?", 1))
+	if res.Error != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "delete token failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "deduct stock failed"})
+		return
+	}
+	if res.RowsAffected == 0 {
+		tx.Rollback()
+		c.JSON(http.StatusForbidden, gin.H{"error": "out of stock"})
 		return
 	}
 
-	tx.Commit()
+	// 提交事务并检查错误
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "commit transaction failed"})
+		return
+	}
+
+	// 原子性校验 + 删除 token（Lua）
+	luaScript := `
+		if redis.call("GET", KEYS[1]) then
+			return redis.call("DEL", KEYS[1])
+		else
+			return 0
+		end
+	`
+	delRes, err := rc.RedisClient.Eval(ctx, luaScript, []string{tokenKey}).Result()
+	if err != nil || delRes.(int64) == 0 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "token expired or already used"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	log.Println("[SeckillCheckoutHandler] Checkout success")
 }

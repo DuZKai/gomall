@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/kafka"
+	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -27,29 +27,32 @@ import (
 
 func main() {
 
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("failed to load .env: %v", err)
+	}
+
 	// 创建上下文用于退出
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
-
+	dal.Init()
 	kafka.InitKafkaConsumerGroup(ctx) // 后台启动消费者
 
-	go dal.Init()
-	// kitexRun()
+	// 启动 Seckill HTTP Server（后台）
 	go seckillInit()
+
+	go kitexRun() // 启动Kitex服务
 
 	// 等待退出信号
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
+	log.Println("Shutting down gracefully...")
 
-	fmt.Println("Shutting down gracefully...")
 	cancel() // 通知消费者退出
-	_ = kafka.ConsumerGroup.Close()
+	if err := kafka.ConsumerGroup.Close(); err != nil {
+		log.Printf("Error closing Kafka ConsumerGroup: %v", err)
+	}
 	asynq.ShutdownAll()
 }
 

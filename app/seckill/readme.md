@@ -46,6 +46,11 @@ CREATE TABLE `activities` (
     `remark` TEXT COMMENT '备注信息',
     `create_at` BIGINT NOT NULL COMMENT '创建时间（时间戳）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀活动表';
+CREATE TABLE activity_stocks (
+    activity_id VARCHAR(64) PRIMARY KEY COMMENT "活动ID",
+    stock INT NOT NULL COMMENT "活动库存"
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀活动库存表' COMMENT='秒杀活动库存表';
+;
 
 
 ```
