@@ -6,6 +6,7 @@ type SeckillRequest struct {
 	UserID     string `json:"user_id"`
 	ActivityID string `json:"activity_id"`
 	Captcha    string `json:"captcha"`
+	Priority   int    `json:"priority"` // 0: 普通，1: 高优先级
 }
 
 type SeckillMessage struct {
@@ -37,21 +38,22 @@ type TokenInfo struct {
 
 // 秒杀活动请求结构
 type CreateActivityRequest struct {
-	ActivityID int64  `json:"activity_id"`
-	ProductID  int64  `json:"product_id"`
+	ActivityID string `json:"activity_id"`
+	ProductID  string `json:"product_id"`
 	Stock      int64  `json:"stock"`
-	StartTime  int64  `json:"start_time"` // 时间戳，秒
-	EndTime    int64  `json:"end_time"`   // 时间戳，秒
+	StartTime  string `json:"start_time"` // 字符串时间，如 "2025-07-12 14:30:00"
+	EndTime    string `json:"end_time"`   // 字符串时间，如 "2025-07-12 14:30:00"
 	Remark     string `json:"remark"`
 }
 
 // 活动信息结构体（数据库/Redis用）
 type Activity struct {
-	ID        int64  `gorm:"primaryKey;column:id"`
-	ProductID int64  `gorm:"column:product_id"`
-	Stock     int64  `gorm:"column:stock"`
-	StartTime int64  `gorm:"column:start_time"`
-	EndTime   int64  `gorm:"column:end_time"`
-	Remark    string `gorm:"column:remark"`
-	CreateAt  int64  `gorm:"column:create_at"`
+	ID         string `gorm:"primaryKey;column:id"`
+	ActivityID string `json:"activity_id"`
+	ProductID  string `gorm:"column:product_id"`
+	Stock      int64  `gorm:"column:stock"`
+	StartTime  int64  `gorm:"column:start_time"`
+	EndTime    int64  `gorm:"column:end_time"`
+	Remark     string `gorm:"column:remark"`
+	CreateAt   int64  `gorm:"column:create_at"`
 }

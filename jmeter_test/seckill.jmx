@@ -34,7 +34,8 @@
                 <stringProp name="Argument.value">{&#xd;
 	&quot;user_id&quot;: &quot;1001&quot;,&#xd;
 	&quot;activity_id&quot;: &quot;seckill2025&quot;,&#xd;
-	&quot;captcha&quot;: &quot;124&quot;&#xd;
+	&quot;captcha&quot;: &quot;124&quot;,&#xd;
+    	&quot;priority&quot;: 1&#xd;
 }&#xd;
 </stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
@@ -342,7 +343,7 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP请求">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="分布式锁测试">
           <stringProp name="HTTPSampler.domain">192.168.101.65</stringProp>
           <stringProp name="HTTPSampler.port">8080</stringProp>
           <stringProp name="HTTPSampler.protocol">HTTP</stringProp>

@@ -30,14 +30,16 @@ CREATE TABLE `orders` (
     KEY `idx_activity_id` (`activity_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='秒杀订单表';
 CREATE TABLE `activities` (
-    `id` BIGINT NOT NULL PRIMARY KEY COMMENT '活动ID',
-    `product_id` BIGINT NOT NULL COMMENT '商品ID',
-    `stock` INT NOT NULL COMMENT '初始库存数量',
-    `start_time` BIGINT NOT NULL COMMENT '活动开始时间（Unix秒）',
-    `end_time` BIGINT NOT NULL COMMENT '活动结束时间（Unix秒）',
-    `remark` VARCHAR(255) DEFAULT NULL COMMENT '活动备注',
-    `create_at` BIGINT NOT NULL COMMENT '创建时间（Unix秒）'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='秒杀活动表';
+    `id` VARCHAR(64) NOT NULL PRIMARY KEY COMMENT '雪花ID',
+    `activity_id` VARCHAR(64) NOT NULL COMMENT '业务活动ID',
+    `product_id` VARCHAR(64) NOT NULL COMMENT '关联商品ID',
+    `stock` BIGINT NOT NULL COMMENT '库存数量',
+    `start_time` BIGINT NOT NULL COMMENT '开始时间（时间戳）',
+    `end_time` BIGINT NOT NULL COMMENT '结束时间（时间戳）',
+    `remark` TEXT COMMENT '备注信息',
+    `create_at` BIGINT NOT NULL COMMENT '创建时间（时间戳）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀活动表';
+
 
 ```
 

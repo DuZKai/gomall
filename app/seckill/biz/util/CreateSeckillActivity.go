@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/mysql"
 	rc "gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
@@ -20,15 +21,31 @@ func CreateSeckillActivity(c *gin.Context) {
 		return
 	}
 
-	// 1. 模拟入库（此处应调用实际 db.InsertActivity）
+	// 生成一个雪花ID
+	id := dal.Node.Generate()
+	const timeLayout = "2006-01-02 15:04:05"
+	startTime, err := time.ParseInLocation(timeLayout, req.StartTime, time.Local)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "开始时间格式错误"})
+		return
+	}
+
+	endTime, err := time.ParseInLocation(timeLayout, req.EndTime, time.Local)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "结束时间格式错误"})
+		return
+	}
+
+	// 1. 入库
 	activity := model.Activity{
-		ID:        req.ActivityID,
-		ProductID: req.ProductID,
-		Stock:     req.Stock,
-		StartTime: req.StartTime,
-		EndTime:   req.EndTime,
-		Remark:    req.Remark,
-		CreateAt:  time.Now().Unix(),
+		ID:         id.String(),
+		ActivityID: req.ActivityID,
+		ProductID:  req.ProductID,
+		Stock:      req.Stock,
+		StartTime:  startTime.Unix(),
+		EndTime:    endTime.Unix(),
+		Remark:     req.Remark,
+		CreateAt:   time.Now().Unix(),
 	}
 
 	if err := mysql.DB.Create(&activity).Error; err != nil {
@@ -37,15 +54,15 @@ func CreateSeckillActivity(c *gin.Context) {
 	}
 
 	// 2. 写入 Redis 缓存（活动信息 + 初始库存）
-	err := cacheSeckillActivity(activity)
+	err = cacheSeckillActivity(activity)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "缓存写入失败"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "创建成功",
-		"activity_id": activity.ID,
+		"message": "创建成功",
+		"id":      activity.ID,
 	})
 }
 
@@ -61,7 +78,7 @@ func cacheSeckillActivity(a model.Activity) error {
 	expire := time.Duration(expireSeconds) * time.Second
 
 	// 活动信息缓存
-	activityKey := fmt.Sprintf("seckill:activity:%d", a.ID)
+	activityKey := fmt.Sprintf("seckill:activity:%s", a.ActivityID)
 	activityJson, _ := json.Marshal(a)
 	err := rc.RedisClient.Set(ctx, activityKey, activityJson, expire).Err()
 	if err != nil {
@@ -69,7 +86,23 @@ func cacheSeckillActivity(a model.Activity) error {
 	}
 
 	// 库存初始化缓存
-	stockKey := fmt.Sprintf("seckill_stock:%d", a.ID)
+	stockKey := fmt.Sprintf("seckill:stock:%s", a.ActivityID)
 	err = rc.RedisClient.Set(ctx, stockKey, a.Stock, expire).Err()
+
+	// 令牌桶初始化
+	err = InitTokenBucket(a.ActivityID, 2000)
+	if err != nil {
+		return err
+	}
 	return err
+}
+
+func InitTokenBucket(activityID string, capacity int) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("seckill:token:bucket:%s", activityID)
+	now := time.Now().UnixNano() / 1e6 // 毫秒
+	return rc.RedisClient.HSet(ctx, key, map[string]interface{}{
+		"last_mill_second": now,
+		"tokens":           capacity,
+	}).Err()
 }
