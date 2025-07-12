@@ -54,7 +54,7 @@ func CreateSeckillActivity(c *gin.Context) {
 	}
 
 	// 2. 写入 Redis 缓存（活动信息 + 初始库存）
-	err = cacheSeckillActivity(activity)
+	err = cacheSeckillActivity(activity, startTime.Unix(), endTime.Unix())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "缓存写入失败"})
 		return
@@ -67,10 +67,10 @@ func CreateSeckillActivity(c *gin.Context) {
 }
 
 // 写缓存逻辑
-func cacheSeckillActivity(a model.Activity) error {
+func cacheSeckillActivity(a model.Activity, startTime int64, endTime int64) error {
 	ctx := context.Background()
 	now := time.Now().Unix()
-	expireSeconds := (a.EndTime-a.StartTime)*2 + (a.StartTime - now)
+	expireSeconds := (endTime-startTime)*2 + (startTime - now)
 	if expireSeconds <= 0 {
 		expireSeconds = 600 // 给个最小兜底值，例如10分钟
 	}
@@ -90,19 +90,20 @@ func cacheSeckillActivity(a model.Activity) error {
 	err = rc.RedisClient.Set(ctx, stockKey, a.Stock, expire).Err()
 
 	// 令牌桶初始化
-	err = InitTokenBucket(a.ActivityID, 2000)
+	key := fmt.Sprintf("seckill:token:bucket:%s", a.ActivityID)
+	now = time.Now().UnixNano() / 1e6 // 毫秒
+	err = rc.RedisClient.HSet(ctx, key, map[string]interface{}{
+		"last_mill_second": now,
+		"tokens":           2000,
+	}).Err()
+	if err != nil {
+		return err
+	}
+
+	// 设置 key 过期时间
+	err = rc.RedisClient.Expire(ctx, key, expire).Err()
 	if err != nil {
 		return err
 	}
 	return err
-}
-
-func InitTokenBucket(activityID string, capacity int) error {
-	ctx := context.Background()
-	key := fmt.Sprintf("seckill:token:bucket:%s", activityID)
-	now := time.Now().UnixNano() / 1e6 // 毫秒
-	return rc.RedisClient.HSet(ctx, key, map[string]interface{}{
-		"last_mill_second": now,
-		"tokens":           capacity,
-	}).Err()
 }
