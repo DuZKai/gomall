@@ -33,7 +33,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		log.Printf("[Consumer] Processing user %s in activity %s at %s", req.UserID, req.ActivityID, req.TS)
 
 		// 黑名单校验
-		blacklistKey := fmt.Sprintf("blacklist:%s", req.UserID)
+		blacklistKey := fmt.Sprintf("seckill:blacklist:%s", req.UserID)
 		isBlacklisted, err := redis.RedisClient.Exists(ctx, blacklistKey).Result()
 		if err != nil {
 			log.Printf("[Consumer] Redis error during blacklist check: %v", err)
@@ -41,7 +41,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		}
 		if isBlacklisted > 0 {
 			log.Printf("[Consumer] User %s is blacklisted, dropping", req.UserID)
-			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill_fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
+			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill:fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
 			sess.MarkMessage(msg, "")
 			continue
 		}
@@ -59,7 +59,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		if count > 5 {
 			log.Printf("[Consumer] User %s is too frequent (%d), adding to blacklist", req.UserID, count)
 			redis.RedisClient.Set(ctx, blacklistKey, 1, 30*time.Minute) // 拉黑 30 分钟
-			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill_fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
+			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill:fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
 			sess.MarkMessage(msg, "")
 			continue
 		}
@@ -79,8 +79,8 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		`
 
 		// 准备 key 和参数
-		stockKey := fmt.Sprintf("seckill_stock:%s", req.ActivityID)
-		tokenKey := fmt.Sprintf("seckill_token:%s:%s", req.ActivityID, req.UserID)
+		stockKey := fmt.Sprintf("seckill:stock:%s", req.ActivityID)
+		tokenKey := fmt.Sprintf("seckill:token:%s:%s", req.ActivityID, req.UserID)
 
 		token := model.TokenInfo{
 			UserID:       req.UserID,
@@ -113,7 +113,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		switch statusCode {
 		case 0:
 			log.Printf("[Consumer] Stock empty for activity %s", req.ActivityID)
-			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill_fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
+			redis.RedisClient.Set(ctx, fmt.Sprintf("seckill:fail:%s:%s", req.ActivityID, req.UserID), 1, time.Minute)
 		case 1:
 			log.Printf("[Consumer] Duplicate token for user %s: %s", req.UserID, returnToken)
 		case 2:

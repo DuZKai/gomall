@@ -53,10 +53,15 @@ func main() {
 
 func seckillInit() {
 	r := gin.Default()
+	// 秒杀请求
 	r.POST("/seckill/request", util.SeckillRequestHandler)
+	// 短轮询状态
 	r.GET("/seckill/status", util.SeckillStatusHandler)
+	// 支付下单入库
 	r.POST("/seckill/checkout", util.SeckillCheckoutHandler)
+	// 缓存预热
 	r.POST("/seckill/activity/create", util.CreateSeckillActivity)
+	// 分布式锁测试
 	r.GET("/seckill/redisLock", util.RedisLockHandler)
 	err := r.Run(":8080")
 	if err != nil {

@@ -19,7 +19,7 @@ func SeckillCheckoutHandler(c *gin.Context) {
 	}
 
 	// Redis 校验 token 是否存在
-	tokenKey := fmt.Sprintf("seckill_token:%s:%s", req.ActivityID, req.UserID)
+	tokenKey := fmt.Sprintf("seckill:token:%s:%s", req.ActivityID, req.UserID)
 	ctx := c.Request.Context()
 	_, err := rc.RedisClient.Get(ctx, tokenKey).Result()
 	if err == redis.Nil {

@@ -14,6 +14,7 @@ import (
 	"gomall/app/seckill/biz/model"
 	"gomall/app/seckill/conf"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func SeckillRequestHandler(c *gin.Context) {
 	}
 	userID := req.UserID
 	activityID := req.ActivityID
-	captcha := req.ActivityID
+	captcha := req.Captcha
 
 	if userID == "" || activityID == "" || captcha == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing parameters"})
@@ -66,22 +67,66 @@ func SeckillRequestHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "activity has ended"})
 		return
 	}
+	// 4. 判断库存是否充足
+	stockKey := fmt.Sprintf("seckill:stock:%s", activityID)
+	stockStr, err := rc.RedisClient.Get(ctx, stockKey).Result()
+	if err != nil {
+		if err == redis.Nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "stock not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
 
+	// 字符串转整数
+	stockNum, err := strconv.Atoi(stockStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid stock format"})
+		return
+	}
+
+	// 判断库存是否为0
+	if stockNum <= 0 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "activity stock is empty"})
+		return
+	}
+
+	// 校验验证码，屏蔽使得程序正常运行
 	// if !verifyCaptcha(captcha) {
 	// 	c.JSON(http.StatusForbidden, gin.H{"error": "Invalid captcha"})
 	// 	return
 	// }
-	// TODO 事实应该判断是否同一个人
+	// 判断是否同一个人，5秒只能一次
+	// userKey := fmt.Sprintf("seckill:user:%s:%s", activityID, userID)
+	// ok, err := rc.RedisClient.SetNX(ctx, userKey, 1, time.Second*5).Result()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// if !ok {
+	// 	// 用户已经请求过了
+	// 	c.JSON(http.StatusTooManyRequests, gin.H{"error": "You have already requested this activity"})
+	// 	return
+	// }
 
-	// 第二步：限流判断
-	// TODO：按照消息队列长度限流
-	entry, blockErr := api.Entry(conf.GetConf().Kafka.Topic, api.WithTrafficType(base.Inbound))
-	if blockErr != nil {
-		// 被限流
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited"})
-		return
+	// 第二步：限流判断 - 根据优先级选择限流策略
+	if req.Priority == 1 { // VIP用户
+		// 使用Sentinel匀速排队限流（资源名seckill_vip）
+		entry, blockErr := api.Entry("seckill_vip", api.WithTrafficType(base.Inbound))
+		if blockErr != nil {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited (sentinel)"})
+			return
+		}
+		defer entry.Exit()
+	} else { // 普通用户
+		// 使用Redis令牌桶限流
+		// rate: 令牌生成速率（建议=预期QPS×1.2）
+		// capacity: 桶容量（建议=库存×5）
+		if !AllowByTokenBucket(activityID, 1200, stockNum*5) { // 参数调整为：rate=1000, capacity=5000
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited (token bucket)"})
+			return
+		}
 	}
-	defer entry.Exit()
 
 	// 第三步：构造 Kafka 消息并异步发送
 	msgBody := map[string]string{

@@ -22,14 +22,14 @@ func NewRollbackSchedulerTask() *asynq.Task {
 }
 
 func HandleRollbackSchedulerTask(ctx context.Context, t *asynq.Task) error {
-	// 获取所有 seckill_token 前缀的 key
-	keys, err := rc.RedisClient.Keys(ctx, "seckill_token:*:*").Result()
+	// 获取所有 seckill:token 前缀的 key
+	keys, err := rc.RedisClient.Keys(ctx, "seckill:token:*:*").Result()
 	if err != nil {
 		return err
 	}
 
 	for _, key := range keys {
-		// key = seckill_token:{activityID}:{userID}
+		// key = seckill:token:{activityID}:{userID}
 		parts := strings.Split(key, ":")
 		if len(parts) != 3 {
 			continue
@@ -64,8 +64,8 @@ func HandleRollbackSchedulerTask(ctx context.Context, t *asynq.Task) error {
 
 		// 回滚库存
 		expireSeconds := token.ExpireSecond
-		stockKey := fmt.Sprintf("seckill_stock:%s", activityID)
-		failKey := fmt.Sprintf("seckill_fail:%s:%s", activityID, userID)
+		stockKey := fmt.Sprintf("seckill:stock:%s", activityID)
+		failKey := fmt.Sprintf("seckill:fail:%s:%s", activityID, userID)
 		luaScript := `
 			if redis.call("exists", KEYS[1]) == 1 then
 				redis.call("incr", KEYS[2])
@@ -115,8 +115,8 @@ func HandleRollbackSchedulerTask(ctx context.Context, t *asynq.Task) error {
 // 	userID := payload.UserID
 // 	activityID := payload.ActivityID
 //
-// 	tokenKey := fmt.Sprintf("seckill_token:%s:%s", activityID, userID)
-// 	stockKey := fmt.Sprintf("seckill_stock:%s", activityID)
+// 	tokenKey := fmt.Sprintf("seckill:token:%s:%s", activityID, userID)
+// 	stockKey := fmt.Sprintf("seckill:stock:%s", activityID)
 //
 // 	// 如果 token 还存在，说明用户未下单，回滚库存
 // 	exist, err := redis.RedisClient.Exists(ctx, tokenKey).Result()
