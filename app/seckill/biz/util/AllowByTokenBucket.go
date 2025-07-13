@@ -51,7 +51,7 @@ func AllowByTokenBucket(activityID string, baseRate int, baseCapacity int) bool 
         if tokens >= 1 then
             tokens = tokens - 1
             redis.call("HMSET", bucket_key, "tokens", tokens, "last_mill_second", now)
-            redis.call("EXPIRE", bucket_key, expire_seconds))  -- 设置过期时间
+            redis.call("EXPIRE", bucket_key, expire_seconds)  -- 设置过期时间
             return 1
         else
             return 0

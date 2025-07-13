@@ -8,6 +8,10 @@
 - 库存回滚：基于 Asynq 构建统一定时分布式任务轮询器，完成过期令牌库存回滚，替代单用户延时任务方案，大幅节省资源。
 
 ## 安装
+启动docker
+```bash
+systemctl start docker
+```
 在docker里面运行如下命令构建容器
 ```bash
 docker-compose up -d
