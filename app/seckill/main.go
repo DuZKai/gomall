@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/zsais/go-gin-prometheus"
 	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/kafka"
@@ -61,6 +62,11 @@ func main() {
 
 func seckillInit() {
 	r := gin.Default()
+
+	// 集成gin-prometheus自动采集请求指标
+	p := ginprometheus.NewPrometheus("seckill")
+	p.Use(r)
+
 	// 配置
 	r.GET("/config", func(c *gin.Context) {
 		appConfig := config.AppConfig

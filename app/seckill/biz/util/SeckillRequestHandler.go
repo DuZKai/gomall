@@ -9,6 +9,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/kafka"
 	rc "gomall/app/seckill/biz/dal/redis"
 	"gomall/app/seckill/biz/model"
@@ -21,6 +22,18 @@ import (
 )
 
 func SeckillRequestHandler(c *gin.Context) {
+	// 记录请求开始时间和状态码
+	startLabelTime := time.Now()
+	statusCode := "200" // 默认状态码
+
+	// 使用 defer 确保最终记录指标
+	defer func() {
+		// 记录 HTTP 指标
+		duration := time.Since(startLabelTime).Seconds()
+		dal.HttpRequestDuration.WithLabelValues(c.Request.Method, c.Request.URL.Path).Observe(duration)
+		dal.HttpRequestsTotal.WithLabelValues(c.Request.Method, c.Request.URL.Path, statusCode).Inc()
+	}()
+
 	ctx := context.Background()
 	// 第一步: 验证资格接口
 	var req model.SeckillRequest
@@ -63,10 +76,14 @@ func SeckillRequestHandler(c *gin.Context) {
 
 	// 3. 判断是否在活动时间内
 	if now < startTime {
+		statusCode = strconv.Itoa(http.StatusForbidden)
+		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "not_started").Inc()
 		c.JSON(http.StatusForbidden, gin.H{"error": "activity has not started"})
 		return
 	}
 	if now >= endTime {
+		statusCode = strconv.Itoa(http.StatusForbidden)
+		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "ended").Inc()
 		c.JSON(http.StatusForbidden, gin.H{"error": "activity has ended"})
 		return
 	}
@@ -91,6 +108,8 @@ func SeckillRequestHandler(c *gin.Context) {
 
 	// 判断库存是否为0
 	if stockNum <= 0 {
+		statusCode = strconv.Itoa(http.StatusForbidden)
+		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "out_of_stock").Inc()
 		c.JSON(http.StatusForbidden, gin.H{"error": "activity stock is empty"})
 		return
 	}
@@ -117,6 +136,9 @@ func SeckillRequestHandler(c *gin.Context) {
 		// 使用Sentinel匀速排队限流（资源名seckill_vip）
 		entry, blockErr := api.Entry("seckill_vip", api.WithTrafficType(base.Inbound))
 		if blockErr != nil {
+			statusCode = strconv.Itoa(http.StatusTooManyRequests)
+			dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "rate_limited").Inc()
+			dal.RateLimitedRequests.WithLabelValues("vip").Inc()
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited (sentinel)"})
 			return
 		}
@@ -126,6 +148,9 @@ func SeckillRequestHandler(c *gin.Context) {
 		// rate: 令牌生成速率（建议=预期QPS×1.2）
 		// capacity: 桶容量（建议=库存×5）
 		if !AllowByTokenBucket(activityID, config.AppConfig.BaseTokenRate, stockNum*config.AppConfig.TokenBucketFactor) {
+			statusCode = strconv.Itoa(http.StatusTooManyRequests)
+			dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "rate_limited").Inc()
+			dal.RateLimitedRequests.WithLabelValues("normal").Inc()
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests - rate limited (token bucket)"})
 			return
 		}
@@ -150,6 +175,8 @@ func SeckillRequestHandler(c *gin.Context) {
 
 	select {
 	case kafka.KafkaProducer.Input() <- msg:
+		dal.KafkaMessagesSent.WithLabelValues("success").Inc()
+		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "queued").Inc()
 		log.Printf("[Kafka] 投递成功: user=%s, activity=%s", userID, activityID)
 
 		msgTimeKey := fmt.Sprintf("seckill:msg_time:%s:%s", activityID, userID)
@@ -161,6 +188,9 @@ func SeckillRequestHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Request accepted, queuing..."})
 
 	default:
+		statusCode = strconv.Itoa(http.StatusServiceUnavailable)
+		dal.KafkaMessagesSent.WithLabelValues("failed").Inc()
+		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "kafka_failed").Inc()
 		log.Printf("[Kafka] 投递失败: user=%s, activity=%s", userID, activityID)
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "server busy, try again later"})
 		return

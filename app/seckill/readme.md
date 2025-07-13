@@ -23,74 +23,47 @@ PS: 如果有错误，可以先手动docker pull对应镜像再执行上面的�
 docker-compose down
 ```
 
-mysql建表语句
-```mysql
-CREATE TABLE `orders` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `user_id` VARCHAR(64) NOT NULL COMMENT '用户ID',
-    `activity_id` VARCHAR(64) NOT NULL COMMENT '活动ID',
-    `status` VARCHAR(16) NOT NULL DEFAULT 'INIT' COMMENT '订单状态: INIT / PAID / TIMEOUT',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `pay_time` DATETIME DEFAULT NULL COMMENT '支付时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_activity_id` (`activity_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='秒杀订单表';
-CREATE TABLE `activities` (
-    `id` VARCHAR(64) NOT NULL PRIMARY KEY COMMENT '雪花ID',
-    `activity_id` VARCHAR(64) NOT NULL COMMENT '业务活动ID',
-    `product_id` VARCHAR(64) NOT NULL COMMENT '关联商品ID',
-    `stock` BIGINT NOT NULL COMMENT '库存数量',
-    `start_time` BIGINT NOT NULL COMMENT '开始时间（时间戳）',
-    `end_time` BIGINT NOT NULL COMMENT '结束时间（时间戳）',
-    `remark` TEXT COMMENT '备注信息',
-    `create_at` BIGINT NOT NULL COMMENT '创建时间（时间戳）'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀活动表';
-CREATE TABLE activity_stocks (
-    activity_id VARCHAR(64) PRIMARY KEY COMMENT "活动ID",
-    stock INT NOT NULL COMMENT "活动库存"
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀活动库存表' COMMENT='秒杀活动库存表';
-;
-```
-
-consul配置新建不同环境的key-value
-- config/dev/seckill_limits
-- config/online/seckill_limits
-- config/test/seckill_limits
-代码如下：
-```JSON
-{
-  "token_ttl": 1,
-  "_token_ttl_comment": "Token 有效时间（分钟）",
-
-  "blacklist_ttl": 30,
-  "_blacklist_ttl_comment": "黑名单拉黑时间（分钟）",
-
-  "freq_limit_expire": 10,
-  "_freq_limit_expire_comment": "访问频率限制键过期时间（秒）",
-
-  "idempotent_key_expire": 10,
-  "_idempotent_key_expire_comment": "幂等性校验键过期时间（分钟）",
-
-  "bucket_expire_seconds": 10,
-  "_bucket_expire_seconds_comment": "Redis 中令牌桶 key 的过期时间（秒）",
-
-  "capacity_factor": 5,
-  "_capacity_factor_comment": "桶容量动态调整因子（capacity = stock * factor）",
-
-  "rate_factor": 2,
-  "_rate_factor_comment": "令牌生成速率动态调整因子（rate = stock * factor）",
-
-  "base_token_rate": 1200,
-  "_base_token_rate_comment": "默认基础令牌生成速率（每秒）",
-
-  "token_bucket_factor": 5,
-  "_token_bucket_factor_comment": "令牌桶限流通用因子（可作倍率）"
-}
-```
+- Grafana监控在project-init/Grafana下
+- mysql建表语句在project-init/Mysql下
+- consul配置新建不同环境的key-value，文件在project-init/Consul下
+  - config/dev/seckill_limits
+  - config/online/seckill_limits
+  - config/test/seckill_limits
 
 安装完成后使用如下命令启动
 ```bash
 go run .
 ```
 
+服务器如果需要同步时间（普罗米修斯需要时间对齐）
+```bash
+yum install -y chrony
+# 启动并设置开机自启
+sudo systemctl start chronyd
+sudo systemctl enable chronyd
+# 查看同步状态
+chronyc tracking
+# 强制立即同步（可选）
+sudo chronyc makestep
+# 验证当前时间和同步源
+timedatectl
+```
+
+安装node_exporter(可选，查看服务器资源使用情况)
+```bash
+# 切换到 /opt 或其他合适目录
+cd /opt
+
+wget https://github.com/prometheus/node_exporter/releases/download/v1.9.1/node_exporter-1.9.1.linux-amd64.tar.gz
+tar -xzf node_exporter-1.9.1.linux-amd64.tar.gz
+cd node_exporter-1.9.1.linux-amd64
+```
+
+### 不同界面位置
+- kafka-ui: http://192.168.101.65:8084
+- consul: http://192.168.101.65:8500
+- reids: http://192.168.101.65:6379
+- mysql: http://192.168.101.65:3306
+- asynq: http://192.168.101.65:8085
+- Prometheus: http://192.168.101.65:9090
+- Grafana: http://192.168.101.65:3000 （默认账号 admin/admin）

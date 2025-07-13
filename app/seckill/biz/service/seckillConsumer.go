@@ -71,6 +71,7 @@ func (h *SeckillConsumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim s
 		}
 		if !ok {
 			log.Printf("[Consumer] Duplicate request detected for user %s, activity %s. Skipping.", req.UserID, req.ActivityID)
+			sess.MarkMessage(msg, "")
 			continue
 		}
 

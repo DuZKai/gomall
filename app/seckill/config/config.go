@@ -27,7 +27,7 @@ func LoadConfigFromConsul() {
 	}
 
 	if pair == nil {
-		log.Fatal("No config found in consul at key: config/seckill_limits")
+		log.Fatal("No config found in consul at key: ", key)
 	}
 
 	var cfg model.SeckillLimitConfig

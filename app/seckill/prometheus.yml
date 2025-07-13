@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'seckill'
+    static_configs:
+      - targets: ['192.168.101.65:8080']  # 你的秒杀服务地址
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['192.168.101.65:9121']  # Redis exporter
+
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['192.168.101.65:9104']  # MySQL exporter
