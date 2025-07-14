@@ -16,10 +16,10 @@ func Init() {
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:               "seckill_vip", // 专门为VIP用户设置的资源名
-			Threshold:              5000,          // VIP用户高QPS阈值
+			Threshold:              600,           // VIP用户高QPS阈值
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Throttling, // 匀速排队模式
-			MaxQueueingTimeMs:      2000,            // 最长排队2秒
+			MaxQueueingTimeMs:      1000,            // 最长排队1秒
 			StatIntervalInMs:       1000,
 		},
 	})

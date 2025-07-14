@@ -24,6 +24,7 @@ type Config struct {
 	Redis    Redis    `yaml:"redis"`
 	Registry Registry `yaml:"registry"`
 	Kafka    Kafka    `yaml:"kafka"`
+	Consul   Consul   `yaml:"consul"`
 }
 
 type MySQL struct {
@@ -52,6 +53,11 @@ type Registry struct {
 	Username        string   `yaml:"username"`
 	Password        string   `yaml:"password"`
 	Env             string   `yaml:"env"`
+}
+
+type Consul struct {
+	Address string `yaml:"address"`
+	Port    int    `yaml:"port"`
 }
 
 type Kafka struct {

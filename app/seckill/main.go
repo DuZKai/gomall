@@ -8,23 +8,14 @@ import (
 	"gomall/app/seckill/biz/dal"
 	"gomall/app/seckill/biz/dal/asynq"
 	"gomall/app/seckill/biz/dal/kafka"
+	"gomall/app/seckill/biz/util"
 	"gomall/app/seckill/config"
 	"log"
-	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/cloudwego/kitex/pkg/klog"
-	"github.com/cloudwego/kitex/pkg/rpcinfo"
-	"github.com/cloudwego/kitex/server"
-	kitexlogrus "github.com/kitex-contrib/obs-opentelemetry/logging/logrus"
-	"go.uber.org/zap/zapcore"
-	"gomall/app/seckill/biz/util"
-	"gomall/app/seckill/conf"
-	"gomall/rpc_gen/kitex_gen/seckill/seckillservice"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func main() {
@@ -34,18 +25,17 @@ func main() {
 	}
 
 	// 创建上下文用于退出
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	dal.Init()
-	kafka.InitKafkaConsumerGroup(ctx) // 后台启动消费者
 	config.LoadConfigFromConsul()
 	config.StartConfigWatcher()
 
 	// 启动 Seckill HTTP Server（后台）
 	go seckillInit()
 
-	go kitexRun() // 启动Kitex服务
+	go kafka.InitKafkaConsumer() // 后台启动消费者
 
 	// 等待退出信号
 	sig := make(chan os.Signal, 1)
@@ -54,8 +44,10 @@ func main() {
 	log.Println("Shutting down gracefully...")
 
 	cancel() // 通知消费者退出
-	if err := kafka.ConsumerGroup.Close(); err != nil {
-		log.Printf("Error closing Kafka ConsumerGroup: %v", err)
+	if kafka.ConsumerGroup != nil {
+		if err := kafka.ConsumerGroup.Close(); err != nil {
+			log.Printf("Error closing Kafka ConsumerGroup: %v", err)
+		}
 	}
 	asynq.ShutdownAll()
 }
@@ -92,51 +84,22 @@ func seckillInit() {
 	r.POST("/seckill/activity/create", util.CreateSeckillActivity)
 	// 分布式锁测试
 	r.GET("/seckill/redisLock", util.RedisLockHandler)
-	err := r.Run(":8080")
-	if err != nil {
-		return
-	}
-}
-
-func kitexRun() {
-	opts := kitexInit()
-	svr := seckillservice.NewServer(new(SeckillServiceImpl), opts...)
-
-	err := svr.Run()
-	if err != nil {
-		klog.Error(err.Error())
-	}
-}
-
-func kitexInit() (opts []server.Option) {
-	// address
-	addr, err := net.ResolveTCPAddr("tcp", conf.GetConf().Kitex.Address)
-	if err != nil {
-		panic(err)
-	}
-	opts = append(opts, server.WithServiceAddr(addr))
-
-	// service info
-	opts = append(opts, server.WithServerBasicInfo(&rpcinfo.EndpointBasicInfo{
-		ServiceName: conf.GetConf().Kitex.Service,
-	}))
-
-	// klog
-	logger := kitexlogrus.NewLogger()
-	klog.SetLogger(logger)
-	klog.SetLevel(conf.LogLevel())
-	asyncWriter := &zapcore.BufferedWriteSyncer{
-		WS: zapcore.AddSync(&lumberjack.Logger{
-			Filename:   conf.GetConf().Kitex.LogFileName,
-			MaxSize:    conf.GetConf().Kitex.LogMaxSize,
-			MaxBackups: conf.GetConf().Kitex.LogMaxBackups,
-			MaxAge:     conf.GetConf().Kitex.LogMaxAge,
-		}),
-		FlushInterval: time.Minute,
-	}
-	klog.SetOutput(asyncWriter)
-	server.RegisterShutdownHook(func() {
-		asyncWriter.Sync()
+	r.GET("/seckill/test", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Seckill service is running",
+		})
 	})
-	return
+
+	// 自定义 http.Server
+	srv := &http.Server{
+		Addr:           ":8080",
+		Handler:        r,
+		ReadTimeout:    5 * time.Second,   // 可视业务需求调大
+		WriteTimeout:   10 * time.Second,  // 可视业务需求调大
+		IdleTimeout:    120 * time.Second, // KeepAlive连接保持时间
+		MaxHeaderBytes: 1 << 20,           // 1MB header 限制
+	}
+
+	// 启动服务
+	log.Fatal(srv.ListenAndServe())
 }

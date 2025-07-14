@@ -23,8 +23,8 @@ type SeckillRequest struct {
 }
 
 const (
-	url          = "http://192.168.101.65:8080/seckill/request"
-	startQPS     = 1600            // 初始 QPS
+	url          = "http://127.0.0.1:8080/seckill/request"
+	startQPS     = 1200            // 初始 QPS
 	maxQPS       = 4000            // 最大 QPS
 	increaseStep = 200             // 每轮递增 QPS
 	stepDuration = 3 * time.Second // 每个阶段持续时间
@@ -88,10 +88,12 @@ func sendRequest(client *http.Client) {
 		UserID:     fmt.Sprintf("%d", rand.Intn(1000000)+1),
 		ActivityID: "5001",
 		Captcha:    fmt.Sprintf("%03d", rand.Intn(1000)),
-		Priority:   rand.Intn(2),
+		Priority:   1,
 	}
 	body, _ := json.Marshal(reqData)
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	// req, _ = http.NewRequest("GET", "http://192.168.101.65:8080/seckill/test", nil)
+
 	req.Header.Set("Content-Type", "application/json")
 
 	start := time.Now()
@@ -119,7 +121,15 @@ func sendRequest(client *http.Client) {
 }
 
 func runSteadyLoad(ctx context.Context, qps int, duration time.Duration, reportInterval time.Duration) {
-	client := &http.Client{Timeout: timeout}
+	client := &http.Client{
+		Timeout: timeout,
+		Transport: &http.Transport{
+			MaxIdleConns:        1000,
+			MaxIdleConnsPerHost: 1000,
+			MaxConnsPerHost:     1000,
+			IdleConnTimeout:     90 * time.Second,
+		},
+	}
 
 	// 重置计数器
 	atomic.StoreInt64(&successCount, 0)
@@ -227,10 +237,10 @@ func runRampUp(ctx context.Context) {
 		fmt.Printf("成功: %d | 失败: %d | 限流: %d | 超时: %d | 成功率: %.2f%%\n",
 			successCount, failCount, currentLimitCount, timeoutCount, successRate)
 
-		if successRate < 90.0 {
-			fmt.Println("成功率低于 90%，系统可能达到极限，停止压测。")
-			break
-		}
+		// if successRate < 90.0 {
+		// 	fmt.Println("成功率低于 90%，系统可能达到极限，停止压测。")
+		// 	break
+		// }
 	}
 }
 
@@ -254,12 +264,12 @@ func main() {
 		cancel()
 	}()
 
-	// fmt.Printf("开始 Ramp-Up 压测：起始 %d QPS，每 %ds 增加 %d，最大 QPS %d\n",
-	// 	startQPS, int(stepDuration.Seconds()), increaseStep, maxQPS)
-	// runRampUp(ctx)
+	fmt.Printf("开始 Ramp-Up 压测：起始 %d QPS，每 %ds 增加 %d，最大 QPS %d\n",
+		startQPS, int(stepDuration.Seconds()), increaseStep, maxQPS)
+	runRampUp(ctx)
 
-	fmt.Println("开始固定 QPS 压测：2000 QPS，持续 1 分钟，每 5 秒打印统计")
-	runSteadyLoad(ctx, 2000, time.Minute, 5*time.Second)
+	// fmt.Println("开始固定 QPS 压测：1000 QPS，持续 1 分钟，每 5 秒打印统计")
+	// runSteadyLoad(ctx, 1000, 2*time.Minute, 5*time.Second)
 
 	printHistogram()
 }

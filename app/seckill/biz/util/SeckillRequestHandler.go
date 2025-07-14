@@ -16,6 +16,7 @@ import (
 	"gomall/app/seckill/conf"
 	"gomall/app/seckill/config"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -78,13 +79,13 @@ func SeckillRequestHandler(c *gin.Context) {
 	if now < startTime {
 		statusCode = strconv.Itoa(http.StatusForbidden)
 		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "not_started").Inc()
-		c.JSON(http.StatusForbidden, gin.H{"error": "activity has not started"})
+		c.JSON(http.StatusOK, gin.H{"error": "activity has not started"})
 		return
 	}
 	if now >= endTime {
 		statusCode = strconv.Itoa(http.StatusForbidden)
 		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "ended").Inc()
-		c.JSON(http.StatusForbidden, gin.H{"error": "activity has ended"})
+		c.JSON(http.StatusOK, gin.H{"error": "activity has ended"})
 		return
 	}
 	// 4. 判断库存是否充足
@@ -110,7 +111,7 @@ func SeckillRequestHandler(c *gin.Context) {
 	if stockNum <= 0 {
 		statusCode = strconv.Itoa(http.StatusForbidden)
 		dal.SeckillBussinessRequestsTotal.WithLabelValues(activityID, "out_of_stock").Inc()
-		c.JSON(http.StatusForbidden, gin.H{"error": "activity stock is empty"})
+		c.JSON(http.StatusOK, gin.H{"error": "activity stock is empty"})
 		return
 	}
 
@@ -167,9 +168,16 @@ func SeckillRequestHandler(c *gin.Context) {
 	}
 	jsonBytes, _ := json.Marshal(msgBody)
 
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		// 这里根据你的业务决定是否异常处理
+		userIDInt = rand.Intn(1000000) // 防止异常，随意分区
+	}
+	partitionKey := strconv.Itoa(userIDInt % 16)
+
 	msg := &sarama.ProducerMessage{
 		Topic: conf.GetConf().Kafka.Topic,
-		Key:   sarama.StringEncoder(activityID), // 按活动 ID 分区
+		Key:   sarama.StringEncoder(partitionKey), // 按 userID 分区
 		Value: sarama.ByteEncoder(jsonBytes),
 	}
 

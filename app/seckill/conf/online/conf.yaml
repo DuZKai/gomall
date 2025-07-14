@@ -14,6 +14,10 @@ registry:
   password: ""
   env: "online"
 
+consul:
+  address: "192.168.101.65"
+  port: 8500
+
 mysql:
   dsn: "%s:%s@tcp(%s:3306)/seckill?charset=utf8mb4&parseTime=True&loc=Local"
 

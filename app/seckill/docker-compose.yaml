@@ -7,12 +7,19 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
       - "2181:2181"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   kafka:
     image: bitnami/kafka:3
     container_name: kafka
+    restart: always
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181

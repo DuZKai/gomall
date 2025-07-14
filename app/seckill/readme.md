@@ -71,3 +71,10 @@ cd node_exporter-1.9.1.linux-amd64
 - asynq: http://192.168.101.65:8085
 - Prometheus: http://192.168.101.65:9090
 - Grafana: http://192.168.101.65:3000 （默认账号 admin/admin）
+
+### 监控配置
+![img](result/1.png)
+![img](result/2.png)
+![img](result/3.png)
+![img](result/4.png)
+

@@ -13,7 +13,10 @@ import (
 var AppConfig *model.SeckillLimitConfig
 
 func LoadConfigFromConsul() {
-	client, err := api.NewClient(api.DefaultConfig())
+	config := api.DefaultConfig()
+	config.Address = conf.GetConf().Registry.RegistryAddress[0]
+
+	client, err := api.NewClient(config)
 	if err != nil {
 		log.Fatalf("Failed to create consul client: %v", err)
 	}

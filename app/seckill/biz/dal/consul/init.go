@@ -1,6 +1,7 @@
 package consul
 
 import (
+	"fmt"
 	"github.com/hashicorp/consul/api"
 	"gomall/app/seckill/conf"
 )
@@ -8,6 +9,9 @@ import (
 func Init() {
 	config := api.DefaultConfig()
 	config.Address = conf.GetConf().Registry.RegistryAddress[0]
+
+	address := conf.GetConf().Consul.Address
+	port := conf.GetConf().Consul.Port
 
 	client, err := api.NewClient(config)
 	if err != nil {
@@ -17,11 +21,11 @@ func Init() {
 	registration := &api.AgentServiceRegistration{
 		ID:      "seckill-service-1",
 		Name:    "seckill-service",
-		Address: config.Address,
-		Port:    8080,
+		Address: address,
+		Port:    port,
 		Tags:    []string{"go"},
 		Check: &api.AgentServiceCheck{
-			HTTP:     "http://" + config.Address + ":8080/health",
+			HTTP:     fmt.Sprintf("http://%s:%d/health", address, port),
 			Interval: "10s",
 			Timeout:  "1s",
 		},
