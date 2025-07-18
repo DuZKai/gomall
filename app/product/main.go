@@ -20,6 +20,7 @@ import (
 	minioTest "gomall/app/product/biz/test"
 	"gomall/app/product/biz/util"
 	"gomall/app/product/conf"
+	"gomall/app/product/rpc"
 	"gomall/rpc_gen/kitex_gen/product"
 	"gomall/rpc_gen/kitex_gen/product/productcatalogservice"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -38,6 +39,7 @@ func main() {
 	// minioExample()
 	// esExample()
 	// ossExample()
+	RPCExample()
 }
 
 func setupGinRouter() *gin.Engine {
@@ -368,4 +370,8 @@ func ossExample() {
 	objectKey := "main1.go"
 	localPath := "/root/go/src/gomall/app/product/main.go"
 	util.UploadFileToOss(oSSClient, oss.BucketName, objectKey, localPath)
+}
+
+func RPCExample() {
+	rpc.Login("abc@example.com", "123456")
 }

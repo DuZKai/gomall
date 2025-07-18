@@ -1,9 +1,11 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	consul "github.com/kitex-contrib/registry-consul"
 	"gomall/app/user/biz/dal"
+	"gomall/rpc_gen/kitex_gen/user"
 	"net"
 	"time"
 
@@ -26,11 +28,31 @@ func main() {
 	dal.Init()
 
 	opts := kitexInit()
-
 	svr := userservice.NewServer(new(UserServiceImpl), opts...)
 
-	err = svr.Run()
-	if err != nil {
+	// 启动 Gin HTTP 服务（在 goroutine 中）
+	go func() {
+		r := gin.Default()
+		r.POST("/user/register", func(c *gin.Context) {
+			req := &user.RegisterReq{}
+			if err := c.ShouldBindJSON(req); err != nil {
+				c.JSON(400, gin.H{"error": "Invalid request body"})
+				return
+			}
+			resp, err := new(UserServiceImpl).Register(c.Request.Context(), req)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, resp)
+		})
+		if err := r.Run(":8080"); err != nil {
+			klog.Error("Failed to run Gin server: ", err)
+		}
+	}()
+
+	// 启动 Kitex RPC 服务（阻塞）
+	if err := svr.Run(); err != nil {
 		klog.Error(err.Error())
 	}
 }

@@ -268,8 +268,8 @@ func main() {
 		startQPS, int(stepDuration.Seconds()), increaseStep, maxQPS)
 	runRampUp(ctx)
 
-	// fmt.Println("开始固定 QPS 压测：1000 QPS，持续 1 分钟，每 5 秒打印统计")
-	// runSteadyLoad(ctx, 1000, 2*time.Minute, 5*time.Second)
+	// fmt.Println("开始固定 QPS 压测：1600 QPS，持续 1 分钟，每 3 秒打印统计")
+	// runSteadyLoad(ctx, 1600, 1*time.Minute, 3*time.Second)
 
 	printHistogram()
 }

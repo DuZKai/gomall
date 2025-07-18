@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"gomall/app/user/biz/dal/mysql"
 	"gomall/app/user/biz/model"
@@ -33,6 +34,8 @@ func (s *LoginService) Run(req *user.LoginReq) (resp *user.LoginResp, err error)
 	resp = &user.LoginResp{
 		UserId: int32(row.ID),
 	}
+
+	fmt.Printf("User %s logged in successfully, User ID = %d\n", req.Email, resp.UserId)
 
 	return resp, nil
 }

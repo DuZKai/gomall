@@ -4,6 +4,8 @@ go 1.24.4
 
 replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
 
+replace user/kitex_gen/user => ../../rpc_gen/kitex_gen/user
+
 require (
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.2.3
 	github.com/cloudwego/hertz v0.10.1
