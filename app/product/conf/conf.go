@@ -27,6 +27,7 @@ type Config struct {
 	Minio      Minio      `yaml:"minio"`
 	ES         ES         `yaml:"elasticsearch"`
 	OSS        OSS        `yaml:"alioss"`
+	Etcd       Etcd       `yaml:"etcd"`
 }
 
 type MySQL struct {
@@ -74,6 +75,10 @@ type Registry struct {
 	RegistryAddress []string `yaml:"registry_address"`
 	Username        string   `yaml:"username"`
 	Password        string   `yaml:"password"`
+}
+
+type Etcd struct {
+	Address []string `yaml:"address"`
 }
 
 type ES struct {

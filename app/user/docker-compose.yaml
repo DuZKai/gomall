@@ -1,16 +1,81 @@
 version: '3'
 services:
   mysql:
-    image: 'mysql:latest'
+    image: 'mysql:9.3.0'
+    container_name: mysql
+    restart: always
     ports:
-      - 3306:3306
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     environment:
-      - MYSQL_DATABASE=gorm
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=mysql
-      - MYSQL_RANDOM_ROOT_PASSWORD="yes"
-  redis:
-    image: 'redis:latest'
-    command: redis-server --requirepass redis
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: user
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+  etcd1:
+    image: quay.io/coreos/etcd:v3.5.14
+    container_name: etcd1
     ports:
-      - 6379:6379
+      - "2379:2379"
+      - "2380:2380"
+    command:
+      - /usr/local/bin/registry
+      - --name=etcd1
+      - --data-dir=/registry-data
+      - --initial-advertise-peer-urls=http://etcd1:2380
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --advertise-client-urls=http://etcd1:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --initial-cluster=etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      - --initial-cluster-token=registry-cluster
+      - --initial-cluster-state=new
+    networks:
+      - etcd-net
+
+  etcd2:
+    image: quay.io/coreos/etcd:v3.5.14
+    container_name: etcd2
+    ports:
+      - "23791:2379"
+      - "2381:2380"
+    command:
+      - /usr/local/bin/registry
+      - --name=etcd2
+      - --data-dir=/registry-data
+      - --initial-advertise-peer-urls=http://etcd2:2380
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --advertise-client-urls=http://etcd2:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --initial-cluster=etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      - --initial-cluster-token=registry-cluster
+      - --initial-cluster-state=new
+    networks:
+      - etcd-net
+
+  etcd3:
+    image: quay.io/coreos/etcd:v3.5.14
+    container_name: etcd3
+    ports:
+      - "23792:2379"
+      - "2382:2380"
+    command:
+      - /usr/local/bin/registry
+      - --name=etcd3
+      - --data-dir=/registry-data
+      - --initial-advertise-peer-urls=http://etcd3:2380
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --advertise-client-urls=http://etcd3:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --initial-cluster=etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+      - --initial-cluster-token=registry-cluster
+      - --initial-cluster-state=new
+    networks:
+      - etcd-net
+
+networks:
+  etcd-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

@@ -5,7 +5,7 @@
       <paths name="101.65">
         <serverdata>
           <mappings>
-            <mapping deploy="/root/go/src/gomall" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/data1/GoProject/gomall" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

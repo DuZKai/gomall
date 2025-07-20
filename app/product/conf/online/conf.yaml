@@ -44,3 +44,10 @@ alioss:
   endpoint: xxx
   access-key-id: xxx
   access-key-secret: xxx
+
+
+etcd:
+  address:
+    - 192.168.101.65:2379
+    - 192.168.101.65:23791
+    - 192.168.101.65:23792

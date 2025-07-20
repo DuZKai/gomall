@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	kitexlogrus "github.com/kitex-contrib/obs-opentelemetry/logging/logrus"
-	consul "github.com/kitex-contrib/registry-consul"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap/zapcore"
 	"gomall/app/product/biz/dal"
@@ -21,6 +20,7 @@ import (
 	"gomall/app/product/biz/util"
 	"gomall/app/product/conf"
 	"gomall/app/product/rpc"
+	etcdService "gomall/pkg/registry"
 	"gomall/rpc_gen/kitex_gen/product"
 	"gomall/rpc_gen/kitex_gen/product/productcatalogservice"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -34,12 +34,13 @@ import (
 func main() {
 	_ = godotenv.Load()
 	dal.Init()
-	// ginExample()
+	kitexInit()
+	ginExample()
 	// bloomExample()
 	// minioExample()
 	// esExample()
 	// ossExample()
-	RPCExample()
+	// RPCExample()
 }
 
 func setupGinRouter() *gin.Engine {
@@ -148,12 +149,23 @@ func kitexInit() (opts []server.Option) {
 	}
 	opts = append(opts, server.WithServiceAddr(addr))
 
-	r, err := consul.NewConsulRegister(conf.GetConf().Registry.RegistryAddress[0])
-
 	// service info
 	opts = append(opts, server.WithServerBasicInfo(&rpcinfo.EndpointBasicInfo{
 		ServiceName: conf.GetConf().Kitex.Service,
-	}), server.WithRegistry(r))
+	}))
+
+	etcdReg, err := etcdService.NewEtcdRegistry(conf.GetConf().Etcd.Address)
+	if err != nil {
+		klog.Fatal("registry init error: ", err)
+	}
+
+	// 注册到etcd, TTL 10秒
+	err = etcdReg.Register("product-service", "192.168.101.65:8888", 10)
+	if err != nil {
+		klog.Fatal("registry register error: ", err)
+	} else {
+		klog.Infof("[registry] 服务已注册: service=product-service addr=192.168.101.65:8888")
+	}
 
 	// klog
 	logger := kitexlogrus.NewLogger()
@@ -170,7 +182,10 @@ func kitexInit() (opts []server.Option) {
 	}
 	klog.SetOutput(asyncWriter)
 	server.RegisterShutdownHook(func() {
-		asyncWriter.Sync()
+		err := asyncWriter.Sync()
+		if err != nil {
+			return
+		}
 	})
 	return
 }
