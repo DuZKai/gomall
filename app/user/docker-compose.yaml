@@ -20,7 +20,7 @@ services:
       - "2379:2379"
       - "2380:2380"
     command:
-      - /usr/local/bin/registry
+      - /usr/local/bin/etcd
       - --name=etcd1
       - --data-dir=/registry-data
       - --initial-advertise-peer-urls=http://etcd1:2380
@@ -40,7 +40,7 @@ services:
       - "23791:2379"
       - "2381:2380"
     command:
-      - /usr/local/bin/registry
+      - /usr/local/bin/etcd
       - --name=etcd2
       - --data-dir=/registry-data
       - --initial-advertise-peer-urls=http://etcd2:2380
@@ -60,7 +60,7 @@ services:
       - "23792:2379"
       - "2382:2380"
     command:
-      - /usr/local/bin/registry
+      - /usr/local/bin/etcd
       - --name=etcd3
       - --data-dir=/registry-data
       - --initial-advertise-peer-urls=http://etcd3:2380

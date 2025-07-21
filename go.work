@@ -7,5 +7,6 @@ use (
   ./app/product
   ./app/seckill
   ./app/user
+  ./app/gateway
   ./rpc_gen
 )

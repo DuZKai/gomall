@@ -1,0 +1,11 @@
+deployment:
+  admin:
+    admin_key:
+      - key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
+        name: admin
+
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"

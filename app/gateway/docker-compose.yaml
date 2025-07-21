@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  etcd:
+    image: bitnami/etcd:latest
+    container_name: etcd
+    network_mode: host
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://127.0.0.1:2379
+    restart: unless-stopped
+
+  apache-apisix:
+    image: apache/apisix
+#    user: root
+    container_name: apache-apisix
+    ports:
+      - "9080:9080"
+      - "9443:9443"
+    network_mode: host
+    depends_on:
+      - etcd
+    environment:
+      - ETCD_HOST=http://127.0.0.1:2379
+    volumes:
+      - ./apisix_conf:/usr/local/apisix/conf
+    restart: unless-stopped
