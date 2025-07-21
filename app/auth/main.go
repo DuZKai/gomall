@@ -37,17 +37,28 @@ import (
 var SecretKey = []byte("secret-key")
 var expire = 30 * time.Minute
 
+type CustomClaims struct {
+	Roles  []string `json:"roles"` // 用户角色或权限
+	UserID string   `json:"user_id"`
+	jwt.RegisteredClaims
+}
+
 // GenerateToken 生成 JWT
 func GenerateToken() (string, error) {
-	claims := &jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expire)),
-		Issuer:    "example",
-		Subject:   "example",
+	claims := CustomClaims{
+		Roles:  []string{"admin", "editor"},
+		UserID: "user123",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expire)),
+			Issuer:    "example",
+			Subject:   "auth",
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	newWithClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(SecretKey)
+	signedToken, err := newWithClaims.SignedString(SecretKey)
 	if err != nil {
 		return "", err
 	}
@@ -58,27 +69,27 @@ func GenerateToken() (string, error) {
 // RefreshToken 刷新 JWT
 func RefreshToken(tokenString string) (string, error) {
 
-	// 解析 token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	// 解析 parse
+	parse, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return SecretKey, nil
 	})
 
-	if err != nil || !token.Valid {
-		return "", fmt.Errorf("invalid token")
+	if err != nil || !parse.Valid {
+		return "", fmt.Errorf("invalid parse")
 	}
 
-	// 验证 token 是否有效
-	claims, ok := token.Claims.(jwt.MapClaims)
+	// 验证 parse 是否有效
+	claims, ok := parse.Claims.(jwt.MapClaims)
 	if !ok {
 		return "", fmt.Errorf("invalid claims")
 	}
 	exp, err := claims.GetExpirationTime()
 	if err != nil {
-		return "", logerr.Wrap(err, "GetExpirationTime from token error")
+		return "", logerr.Wrap(err, "GetExpirationTime from parse error")
 	}
 
 	if time.Until(exp.Time) < 0 {
-		return "", logerr.New("the token expires")
+		return "", logerr.New("the parse expires")
 	}
 
 	return GenerateToken()
@@ -89,32 +100,32 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing parse"})
 			c.Abort()
 			return
 		}
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		parse, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return SecretKey, nil
 		})
 
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		if err != nil || !parse.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid parse"})
 			c.Abort()
 			return
 		}
 
-		// 从 token 中提取 claims 并存入上下文
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		// 从 parse 中提取 claims 并存入上下文
+		if claims, ok := parse.Claims.(jwt.MapClaims); ok {
 			subject := claims["sub"] // 通常是用户 ID 或用户名
 			c.Set("user", subject)
 		} else {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid parse claims"})
 			c.Abort()
 			return
 		}
 
-		// token 解析成功，放行
+		// parse 解析成功，放行
 		c.Next()
 	}
 }
@@ -135,12 +146,12 @@ func useJwt() {
 
 	// 登录接口，返回 token
 	r.POST("/login", func(c *gin.Context) {
-		token, err := GenerateToken()
+		generateToken, err := GenerateToken()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate generateToken"})
 			return
 		}
-		c.String(http.StatusOK, token)
+		c.String(http.StatusOK, generateToken)
 	})
 
 	// 刷新接口，刷新 token
@@ -158,7 +169,10 @@ func useJwt() {
 	r.GET("/example", AuthMiddleware(), ExampleHandler)
 
 	fmt.Println("service start on :8080")
-	r.Run(":8080")
+	err := r.Run(":8080")
+	if err != nil {
+		return
+	}
 }
 
 func main() {
