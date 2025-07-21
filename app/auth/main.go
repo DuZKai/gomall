@@ -98,6 +98,7 @@ func RefreshToken(tokenString string) (string, error) {
 // AuthMiddleware 中间件，用于验证请求中的 token
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		start := time.Now()
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing parse"})
@@ -124,7 +125,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		
+		elapsed := time.Since(start)
+		log.Printf("JWT 鉴权耗时: %v", elapsed)
 		// parse 解析成功，放行
 		c.Next()
 	}
